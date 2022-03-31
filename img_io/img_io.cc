@@ -9,6 +9,10 @@ namespace MY_IMG
     {
         read(file_path);
     }
+    ImageIO::ImageIO(const cv::Mat &img)
+    {
+        img_ = img;
+    }
     cv::Mat ImageIO::GetData(){
         return img_;
     }

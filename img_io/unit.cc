@@ -183,17 +183,22 @@ void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg,const bo
 struct F{
   const cv::Mat &img;
   cv::Mat &dimg;
+  bool is_dft;
   // 构造函数
-  F(const cv::Mat &img, cv::Mat &dimg) : img(img), dimg(dimg) {}
+  F(const cv::Mat &img, cv::Mat &dimg,const bool is_dft = true) : img(img), dimg(dimg),is_dft(is_dft) {}
   // 滤波函数
   double operator()(int u,int v) const {
     int height = img.rows;
     int width = img.cols;
 
     std::complex<double> sum(0, 0);
+    double coef = -2;
+    if(!is_dft) {
+      coef = 2;
+    }
     for(int i = 0;i < height;i++) {
       for(int j = 0;j < width;j++) {
-        sum += std::complex<double>(img.at<uint8_t>(i, j) , 0) * std::exp(std::complex<double>(0, -2 * M_PI * (i * u * 1.0 / height + j * v * 1.0 / width)));
+        sum += std::complex<double>(img.at<uint8_t>(i, j) , 0) * std::exp(std::complex<double>(0, coef * M_PI * (i * u * 1.0 / height + j * v * 1.0 / width)));
       }
     }
     sum /= height * width;
@@ -243,6 +248,51 @@ void DFT(const cv::Mat &src, cv::Mat &dimg) {
   #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < type_size; i++) {
     dft_(temp_img[i], temp_img[i]);
+  }
+
+  // 合并通道
+  cv::merge(temp_img, type_size, dimg);
+}
+void idft_(const cv::Mat &src,cv::Mat &dimg){
+  int width = src.cols;
+  int height = src.rows;
+
+  cv::Mat tmp_img = cv::Mat(src.size(), CV_64FC1);
+  F f(src, tmp_img,false);
+  #pragma omp parallel for schedule(dynamic)
+  for(int i = 0;i < height;i++) {
+    #pragma omp parallel for schedule(dynamic)
+    for(int j = 0;j < width;j++) {
+      tmp_img.at<double>(i,j) = f(i + (height - 1)/2, j + (width - 1)/2);
+    }
+  }
+  tmp_img.copyTo(dimg);
+}
+void IDFT(const cv::Mat &src, cv::Mat &dimg){
+  int width = src.cols;
+  int height = src.rows;
+  int radim_h = static_cast<int>(src.cols - 1);
+  int radim_w = static_cast<int>(src.rows - 1);
+
+  dimg = cv::Mat(src.size(), CV_64FC1);
+
+  // 获取图像类型和该类型变量的类型
+  const int type = src.type();
+  const int type_size = CV_MAT_CN(type);
+  const int type_code = CV_MAT_DEPTH(type);
+
+  // 分配内存
+  cv::Mat temp_img[type_size];
+  for (int i = 0; i < type_size; i++) {
+    temp_img[i] = cv::Mat(height, width, CV_64FC1);
+  }
+
+  // 分离通道
+  cv::split(src, temp_img);
+
+  #pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < type_size; i++) {
+    idft_(temp_img[i], temp_img[i]);
   }
 
   // 合并通道

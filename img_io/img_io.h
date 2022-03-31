@@ -11,6 +11,7 @@ namespace MY_IMG
     {
     public:
         ImageIO();
+        ImageIO(const cv::Mat &img);
         explicit ImageIO(const std::string &file_path);
         void read(const std::string &file_path);
         void show(const std::string &title = "img");
