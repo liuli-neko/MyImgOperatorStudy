@@ -27,7 +27,7 @@ int main(int argc, char **argv)
     ImageIO img(file_name);
     cv::Mat blur_filter;
     time_t t1 = clock();
-    CreateGaussBlurFilter(blur_filter, sigma);
+    CreateGaussBlurFilter(blur_filter, sigma, -1, -1);
     time_t t2 = clock();
     LOG("CreateGaussBlurFilter time: %f", static_cast<double>(t2 - t1) / 1000.0);
     LOG("blur_filter size: [%d,%d]", blur_filter.rows, blur_filter.cols);
