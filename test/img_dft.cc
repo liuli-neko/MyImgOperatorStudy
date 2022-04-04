@@ -20,12 +20,14 @@ int main(int argc, char **argv)
     ImageIO img(file_name);
     // get dft
     cv::Mat dft_img;
+    cv::Mat gray_img;
+    img.rgb2gray(gray_img);
     time_t t1 = clock();
-    DFT(img.GetData(), dft_img);
+    DFT(gray_img, dft_img);
     time_t t2 = clock();
     LOG("DFT time: %f", static_cast<double>(t2 - t1) / 1000.0);
     // show
-    cv::imshow("dft_img", dft_img);
+    cv::imshow("dft_img",ConvertComplexMat2doubleMat(dft_img));
     // get idft
     cv::Mat idft_img;
     t1 = clock();

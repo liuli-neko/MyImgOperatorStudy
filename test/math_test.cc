@@ -1,6 +1,11 @@
 #include <cmath>
 #include <complex>
 #include <iostream>
+#include <functional>
+
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
 using namespace std;
 
@@ -21,6 +26,12 @@ int main(){
         cout << "exp(c): " << exp(c) << endl;
     }
 
+    Eigen::MatrixXd A(2, 2), B(2, 2);
+    A << 1, 2, 3, 4;
+    B << 4, 3, 2, 1;
+    Eigen::MatrixXd C = A * B;
+    cout << "A * B: " << endl << C << endl;
+    cout << C / 4 << endl;
 
     return 0;
 }

@@ -1,6 +1,9 @@
 #include "unit.h"
 #include <cmath>
 #include <complex>
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
 namespace MY_IMG {
 
@@ -130,10 +133,10 @@ void filter2d_(const cv::Mat &input_img, cv::Mat &output_img,
           sum += input_img.at<uint8_t>(x, y) * filter.at<double>(m, n);
         }
       }
-      if(sum < 0) {
+      if (sum < 0) {
         sum = 0;
       }
-      if(sum > 255) {
+      if (sum > 255) {
         sum = 255;
       }
       tmp_buffer.at<uint8_t>(i, j) = static_cast<uint8_t>(sum);
@@ -143,7 +146,8 @@ void filter2d_(const cv::Mat &input_img, cv::Mat &output_img,
   tmp_buffer.copyTo(output_img);
 }
 
-void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg,const bool &is_resverse) {
+void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg,
+               const bool &is_resverse) {
   int width = img.cols;
   int height = img.rows;
   int radim_h = static_cast<int>(filter.cols - 1);
@@ -156,8 +160,8 @@ void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg,const bo
   const int type = img.type();
   const int type_size = CV_MAT_CN(type);
   const int type_code = CV_MAT_DEPTH(type);
-  
-  LOG("type_size: %d type_code: %d",type_size,type_code);
+
+  LOG("type_size: %d type_code: %d", type_size, type_code);
 
   // 分配内存
   cv::Mat temp_img[type_size];
@@ -168,11 +172,11 @@ void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg,const bo
   // 分离通道
   cv::split(img, temp_img);
 
-  // 对每个通道进行滤波
-  #pragma omp parallel for schedule(dynamic)
+// 对每个通道进行滤波
+#pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < type_size; i++) {
     filter2d_(temp_img[i], temp_img[i], filter);
-    if(is_resverse) {
+    if (is_resverse) {
       temp_img[i] = 255 - temp_img[i];
     }
   }
@@ -180,122 +184,118 @@ void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg,const bo
   // 合并通道
   cv::merge(temp_img, type_size, dimg);
 }
-struct F{
-  const cv::Mat &img;
-  cv::Mat &dimg;
-  bool is_dft;
-  // 构造函数
-  F(const cv::Mat &img, cv::Mat &dimg,const bool is_dft = true) : img(img), dimg(dimg),is_dft(is_dft) {}
-  // 滤波函数
-  double operator()(int u,int v) const {
-    int height = img.rows;
-    int width = img.cols;
-
-    std::complex<double> sum(0, 0);
-    double coef = -2;
-    if(!is_dft) {
-      coef = 2;
-    }
-    for(int i = 0;i < height;i++) {
-      for(int j = 0;j < width;j++) {
-        sum += std::complex<double>(img.at<uint8_t>(i, j) , 0) * std::exp(std::complex<double>(0, coef * M_PI * (i * u * 1.0 / height + j * v * 1.0 / width)));
-      }
-    }
-    sum /= height * width;
-    double mag = std::abs(sum);
-    return mag;
-  }
-};
-void dft_(const cv::Mat &src,cv::Mat &dimg){
-  int width = src.cols;
-  int height = src.rows;
-
-  cv::Mat tmp_img = cv::Mat(src.size(), CV_64FC1);
-  F f(src, tmp_img);
-  #pragma omp parallel for schedule(dynamic)
-  for(int i = 0;i < height;i++) {
-    #pragma omp parallel for schedule(dynamic)
-    for(int j = 0;j < width;j++) {
-      tmp_img.at<double>(i,j) = f(i + (height - 1)/2, j + (width - 1)/2);
+cv::Mat ConvertComplexMat2doubleMat(const cv::Mat &img) {
+  int height = img.rows;
+  int width = img.cols;
+  cv::Mat result = cv::Mat(height, width, CV_64FC1);
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      result.at<double>(i, j) = std::abs(img.at<std::complex<double>>(i, j));
     }
   }
-  tmp_img.copyTo(dimg);
+  return result;
 }
-// 实现傅里叶变换
-void DFT(const cv::Mat &src, cv::Mat &dimg) {
-  int width = src.cols;
-  int height = src.rows;
-  int radim_h = static_cast<int>(src.cols - 1);
-  int radim_w = static_cast<int>(src.rows - 1);
-
-  dimg = cv::Mat(src.size(), CV_64FC1);
-
-  // 获取图像类型和该类型变量的类型
-  const int type = src.type();
-  const int type_size = CV_MAT_CN(type);
-  const int type_code = CV_MAT_DEPTH(type);
-
-  // 分配内存
-  cv::Mat temp_img[type_size];
-  for (int i = 0; i < type_size; i++) {
-    temp_img[i] = cv::Mat(height, width, CV_64FC1);
-  }
-
-  // 分离通道
-  cv::split(src, temp_img);
-
-  // 对每个通道进行傅里叶变换
-  #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < type_size; i++) {
-    dft_(temp_img[i], temp_img[i]);
-  }
-
-  // 合并通道
-  cv::merge(temp_img, type_size, dimg);
-}
-void idft_(const cv::Mat &src,cv::Mat &dimg){
-  int width = src.cols;
-  int height = src.rows;
-
-  cv::Mat tmp_img = cv::Mat(src.size(), CV_64FC1);
-  F f(src, tmp_img,false);
-  #pragma omp parallel for schedule(dynamic)
-  for(int i = 0;i < height;i++) {
-    #pragma omp parallel for schedule(dynamic)
-    for(int j = 0;j < width;j++) {
-      tmp_img.at<double>(i,j) = f(i + (height - 1)/2, j + (width - 1)/2);
+cv::Mat ConvertDoubleMat2Uint8Mat(const cv::Mat &img) {
+  int height = img.rows;
+  int width = img.cols;
+  cv::Mat result = cv::Mat(height, width, CV_8UC1);
+  // 获取图像中最大值和最小值
+  double min_value = 0;
+  double max_value = 0;
+  cv::minMaxLoc(img, &min_value, &max_value);
+  // 对每个像素进行转换
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      result.at<uint8_t>(i, j) =
+          static_cast<uint8_t>(255 * (img.at<double>(i, j) - min_value) /
+                               (max_value - min_value));
     }
   }
-  tmp_img.copyTo(dimg);
+  return result;
 }
-void IDFT(const cv::Mat &src, cv::Mat &dimg){
-  int width = src.cols;
-  int height = src.rows;
-  int radim_h = static_cast<int>(src.cols - 1);
-  int radim_w = static_cast<int>(src.rows - 1);
-
-  dimg = cv::Mat(src.size(), CV_64FC1);
-
-  // 获取图像类型和该类型变量的类型
-  const int type = src.type();
-  const int type_size = CV_MAT_CN(type);
-  const int type_code = CV_MAT_DEPTH(type);
-
-  // 分配内存
-  cv::Mat temp_img[type_size];
-  for (int i = 0; i < type_size; i++) {
-    temp_img[i] = cv::Mat(height, width, CV_64FC1);
+Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> ConvertMat2Eigen(
+    const cv::Mat &img) {
+  int height = img.rows;
+  int width = img.cols;
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> result(height, width);
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      result(i, j) = img.at<std::complex<double>>(i, j);
+    }
   }
-
-  // 分离通道
-  cv::split(src, temp_img);
-
-  #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < type_size; i++) {
-    idft_(temp_img[i], temp_img[i]);
+  return result;
+}
+cv::Mat ConvertEigen2Mat(const Eigen::Matrix<std::complex<double>,Eigen::Dynamic,Eigen::Dynamic> &img) {
+  int height = img.rows();
+  int width = img.cols();
+  cv::Mat result = cv::Mat(height, width, CV_64FC2);
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      result.at<std::complex<double>>(i, j) = img(i, j);
+    }
   }
-
-  // 合并通道
-  cv::merge(temp_img, type_size, dimg);
+  return result;
+}
+void DFT(const cv::Mat &img, cv::Mat &dft_img) {
+  int height = img.rows;
+  int width = img.cols;
+  // 将图像转换为复数矩阵
+  cv::Mat temp_img = ConvertSingleChannelMat2ComplexMat<uint8_t>(img);
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> eigen_img = ConvertMat2Eigen(temp_img);
+  
+  // 创建傅里叶变换矩阵
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> dft_mat_w =
+      Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>::Zero(width, width);
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> dft_mat_h =
+      Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>::Zero(height, height);
+  for (int i = 0; i < width; i++) {
+    for (int j = 0; j < width; j++) {
+      dft_mat_w(i, j) = std::exp(std::complex<double>(0, -2 * M_PI * i * j / width));
+    }
+  }
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < height; j++) {
+      dft_mat_h(i, j) = std::exp(std::complex<double>(0, -2 * M_PI * i * j / height));
+    }
+  }
+  // 傅里叶变换
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> dft_mat = dft_mat_w * eigen_img * dft_mat_h;
+  dft_mat /= width * height;
+  // 转换为cv::Mat
+  dft_img = ConvertEigen2Mat(dft_mat);
+}
+void IDFT(const cv::Mat &dft_img, cv::Mat &idft_img) {
+  int height = dft_img.rows;
+  int width = dft_img.cols;
+  // 将图像转换为复数矩阵
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> eigen_img = ConvertMat2Eigen(dft_img);
+  // 创建傅里叶逆变换矩阵
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> idft_mat_w =
+      Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>::Zero(width, width);
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> idft_mat_h =
+      Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>::Zero(height, height);
+  for (int i = 0; i < width; i++) {
+    for (int j = 0; j < width; j++) {
+      idft_mat_w(i, j) = std::exp(std::complex<double>(0, 2 * M_PI * i * j / width));
+    }
+  }
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < height; j++) {
+      idft_mat_h(i, j) = std::exp(std::complex<double>(0, 2 * M_PI * i * j / height));
+    }
+  }
+  // 傅里叶逆变换
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> idft_mat = idft_mat_w * eigen_img * idft_mat_h;
+  idft_img   /= width * height;
+  // 转换为cv::Mat
+  idft_img = cv::Mat(height, width, CV_8UC1);
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      int value = static_cast<int>(idft_mat(i, j).real() + 0.5);
+      if(value < 0) value = 0;
+      if(value > 255) value = 255;
+      idft_img.at<uint8_t>(i, j) = static_cast<uint8_t>(value);
+    }
+  }
 }
 } // namespace MY_IMG

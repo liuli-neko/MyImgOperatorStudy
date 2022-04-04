@@ -18,6 +18,16 @@ int main(int argc,char **argv){
             cout << img.at<Vec3b>(i,j) << endl;
         }
     }
+    cout << endl;
+    Mat cver(5,5,CV_64FC2,Scalar(0,0));
+    for (int i = 0;i<cver.rows;i++){
+        for (int j = 0;j<cver.cols;j++){
+            cver.at<std::complex<double>>(i,j).real(i);
+            cver.at<std::complex<double>>(i,j).imag(j);
+        }
+    }
+
+    cout << cver << endl;
 
     return 0;
 }

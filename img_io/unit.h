@@ -26,9 +26,26 @@ namespace MY_IMG
     void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma, int radim_h,
                                int radim_w);
     void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg, const bool &is_resverse = false);
+    cv::Mat ConvertComplexMat2doubleMat(const cv::Mat &img);
+    template <typename T>
+    cv::Mat ConvertSingleChannelMat2ComplexMat(const cv::Mat &img);
+    cv::Mat ConvertDoubleMat2Uint8Mat(const cv::Mat &img);
+
     // 定义傅里叶变换的函数声明
     void DFT(const cv::Mat &src, cv::Mat &dst);
     void IDFT(const cv::Mat &src, cv::Mat &dst);
 } // namespace MY_IMG
-
+template <typename T>
+cv::Mat MY_IMG::ConvertSingleChannelMat2ComplexMat(const cv::Mat &img) {
+  int height = img.rows;
+  int width = img.cols;
+  cv::Mat result = cv::Mat(height, width, CV_64FC2);
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      result.at<std::complex<double>>(i, j) =
+          std::complex<double>(static_cast<double>(img.at<T>(i, j)), 0);
+    }
+  }
+  return result;
+}
 #endif

@@ -4,6 +4,8 @@ add_requires("libpng")
 add_requires("libwebp")
 add_rules("mode.debug","mode.release")
 
+add_includedirs("D:\\APP\\eigen","D:\\APP\\eigen\\eigen","D:\\APP\\eigen\\eigen\\Eigen")
+
 target("main")
     add_includedirs("img_io/")
     add_packages("opencv")
@@ -85,6 +87,12 @@ target("img_filter")
     add_packages("libwebp")
     add_files("img_io/*.cc")
     add_files("test/img_filter.cc")
+    if is_mode("debug") then 
+        add_defines("DEBUG")
+    end
+
+target("math_test")
+    add_files("test/math_test.cc")
     if is_mode("debug") then 
         add_defines("DEBUG")
     end
