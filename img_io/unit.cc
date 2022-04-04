@@ -236,11 +236,22 @@ cv::Mat ConvertEigen2Mat(const Eigen::Matrix<std::complex<double>,Eigen::Dynamic
   }
   return result;
 }
+// 设置图像偏移n/2，m/2
+void _fftShift(cv::Mat &img) {
+  int height = img.rows;
+  int width = img.cols;
+  for(int i = 0;i < height;i++){
+    for(int j = 0;j < width;j++){
+      img.at<std::complex<double>>(i,j) *= pow(-1,i+j);
+    }
+  }
+}
 void DFT(const cv::Mat &img, cv::Mat &dft_img) {
   int height = img.rows;
   int width = img.cols;
   // 将图像转换为复数矩阵
   cv::Mat temp_img = ConvertSingleChannelMat2ComplexMat<uint8_t>(img);
+  _fftShift(temp_img);
   Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> eigen_img = ConvertMat2Eigen(temp_img);
   
   // 创建傅里叶变换矩阵
@@ -264,6 +275,7 @@ void DFT(const cv::Mat &img, cv::Mat &dft_img) {
   // 转换为cv::Mat
   dft_img = ConvertEigen2Mat(dft_mat);
 }
+
 void IDFT(const cv::Mat &dft_img, cv::Mat &idft_img) {
   int height = dft_img.rows;
   int width = dft_img.cols;
@@ -291,7 +303,7 @@ void IDFT(const cv::Mat &dft_img, cv::Mat &idft_img) {
   idft_img = cv::Mat(height, width, CV_8UC1);
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      int value = static_cast<int>(idft_mat(i, j).real() + 0.5);
+      int value = static_cast<int>(idft_mat(i, j).real() * pow(-1,i + j) + 0.5);
       if(value < 0) value = 0;
       if(value > 255) value = 255;
       idft_img.at<uint8_t>(i, j) = static_cast<uint8_t>(value);
