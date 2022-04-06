@@ -223,6 +223,8 @@ Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> ConvertMat2E
       result(i, j) = img.at<std::complex<double>>(i, j);
     }
   }
+  // LOG("Eigen: (%ld,%ld)", result.rows(), result.cols());
+  // LOG("Mat: (%d,%d)", img.rows, img.cols);
   return result;
 }
 cv::Mat ConvertEigen2Mat(const Eigen::Matrix<std::complex<double>,Eigen::Dynamic,Eigen::Dynamic> &img) {
@@ -249,11 +251,14 @@ void _fftShift(cv::Mat &img) {
 void DFT(const cv::Mat &img, cv::Mat &dft_img) {
   int height = img.rows;
   int width = img.cols;
+  // LOG("img size: (%d,%d)", height, width);
   // 将图像转换为复数矩阵
   cv::Mat temp_img = ConvertSingleChannelMat2ComplexMat<uint8_t>(img);
+  // LOG("temp_img size: (%d,%d)", temp_img.rows, temp_img.cols);
   _fftShift(temp_img);
+  // LOG("temp_img size(fftshift): (%ld,%ld)", temp_img.rows, temp_img.cols);
   Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> eigen_img = ConvertMat2Eigen(temp_img);
-  
+  // LOG("eigen_img size: (%ld,%ld)", eigen_img.rows(), eigen_img.cols());
   // 创建傅里叶变换矩阵
   Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> dft_mat_w =
       Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>::Zero(width, width);
@@ -270,10 +275,12 @@ void DFT(const cv::Mat &img, cv::Mat &dft_img) {
     }
   }
   // 傅里叶变换
-  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> dft_mat = dft_mat_w * eigen_img * dft_mat_h;
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> dft_mat = dft_mat_h * eigen_img * dft_mat_w;
   dft_mat /= width * height;
+  // LOG("dft_mat size: (%ld,%ld)", dft_mat.rows(), dft_mat.cols());
   // 转换为cv::Mat
   dft_img = ConvertEigen2Mat(dft_mat);
+  // LOG("dft_img size: (%d,%d)", dft_img.rows, dft_img.cols);
 }
 
 void IDFT(const cv::Mat &dft_img, cv::Mat &idft_img) {
@@ -297,7 +304,7 @@ void IDFT(const cv::Mat &dft_img, cv::Mat &idft_img) {
     }
   }
   // 傅里叶逆变换
-  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> idft_mat = idft_mat_w * eigen_img * idft_mat_h;
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> idft_mat = idft_mat_h * eigen_img * idft_mat_w;
   idft_img   /= width * height;
   // 转换为cv::Mat
   idft_img = cv::Mat(height, width, CV_8UC1);

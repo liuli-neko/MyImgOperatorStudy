@@ -19,6 +19,7 @@ int main(int argc, char **argv) {
   cv::Mat dft_img;
   cv::Mat gray_img;
   img.rgb2gray(gray_img);
+  cv::imshow("gray_img", gray_img);
   time_t t1 = clock();
   DFT(gray_img, dft_img);
   time_t t2 = clock();
