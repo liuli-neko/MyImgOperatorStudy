@@ -32,18 +32,6 @@ target("path_test")
         add_defines("DEBUG")
     end
 
-target("img_base")
-    add_includedirs("img_io/")
-    add_packages("opencv")
-    add_packages("libjpeg")
-    add_packages("libpng")
-    add_packages("libwebp")
-    add_files("img_io/*.cc")
-    add_files("test/img_base.cc")
-    if is_mode("debug") then 
-        add_defines("DEBUG")
-    end
-
 target("img_gauss_blur")
     add_includedirs("img_io/")
     add_packages("opencv")

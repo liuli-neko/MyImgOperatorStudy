@@ -1,4 +1,3 @@
-#include "img_io.h"
 #include "unit.h"
 #include <ctime>
 #include <iostream>
@@ -14,11 +13,11 @@ int main(int argc, char **argv) {
       output_name = std::string(argv[2]);
     }
   }
-  ImageIO img(file_name);
+  cv::Mat img = cv::imread(file_name, cv::IMREAD_COLOR);
   // get dft
   cv::Mat dft_img;
   cv::Mat gray_img;
-  img.rgb2gray(gray_img);
+  Rbg2Gray(img, gray_img);
   cv::imshow("gray_img", gray_img);
   time_t t1 = clock();
   DFT(gray_img, dft_img);
@@ -136,7 +135,7 @@ int main(int argc, char **argv) {
 
   // 拆分通道
   cv::Mat img_one[3];
-  cv::split(img.GetData(), img_one);
+  cv::split(img, img_one);
   gauss_filter.D0 = 10;
   // 将三个通道单独使用高通滤波器进行滤波
   cv::Mat img_one_dft[3];

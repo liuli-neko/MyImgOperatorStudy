@@ -17,6 +17,5 @@ add_subdirectory(test)
 
 add_executable(main main.cc)
 
-target_link_libraries(main img_io)
 target_link_libraries(main unit)
 # target_link_libraries(main ${EIGEN3_LIBS})

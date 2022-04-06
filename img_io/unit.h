@@ -33,7 +33,7 @@ struct ButterworthFilter {
   double W;
   std::pair<double, double> center;
   ButterworthFilter(std::pair<double, double> center, double D0 = 10, int n = 2,
-              double W = 1.0)
+                    double W = 1.0)
       : center(center), D0(D0), n(n), W(W) {}
   double LowPassFilter(double x, double y) {
     double D = Dist(x, y, center.first, center.second);
@@ -63,7 +63,7 @@ struct GaussianFilter {
     return 1 - exp(-D * D / (2 * D0 * D0));
   }
 };
-
+void Rbg2Gray(const cv::Mat &img, cv::Mat &dimg);
 void HistogramEqualization(const cv::Mat &input_img, cv::Mat &output_img);
 void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma,
                            int radim = -1);

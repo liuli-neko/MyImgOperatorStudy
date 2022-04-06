@@ -10,9 +10,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 include_directories("/")
 
-add_library(img_io img_io.cc)
 add_library(unit unit.cc)
 
-target_link_libraries(img_io ${OpenCV_LIBS})
 target_link_libraries(unit ${OpenCV_LIBS})
 # target_link_libraries(unit ${Eigen3_LIBRARIES})

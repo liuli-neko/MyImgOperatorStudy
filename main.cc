@@ -1,12 +1,10 @@
-#include "img_io.h"
 #include "unit.h"
 #include <fstream>
 #include <iostream>
 #include <vector>
 
+
 using MY_IMG::CreateGaussBlurFilter;
-using MY_IMG::HistogramEqualization;
-using MY_IMG::ImageIO;
 using MY_IMG::H1;
 using MY_IMG::H2;
 using MY_IMG::H3;
@@ -15,34 +13,32 @@ using MY_IMG::H5;
 using MY_IMG::H6;
 using MY_IMG::H7;
 using MY_IMG::H8;
+using MY_IMG::HistogramEqualization;
+using MY_IMG::Rbg2Gray;
 
 std::string file_name = "./test_img.png";
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   double sigma = 1;
-  if (argc >= 2)
-  {
+  if (argc >= 2) {
     file_name = std::string(argv[1]);
-    if (argc >= 3)
-    {
+    if (argc >= 3) {
       sigma = std::stod(argv[2]);
     }
   }
   std::ifstream file(file_name, std::ios::binary);
-  if (!file.is_open())
-  {
+  if (!file.is_open()) {
     printf("file open faild\n");
     return 0;
   }
   file.close();
   // read img and show
-  ImageIO img(file_name);
+  cv::Mat img = cv::imread(file_name, cv::IMREAD_COLOR);
   // img.show();
   // img.save("./test_img_out.png");
   // make color image to gray and show
   cv::Mat gray_img;
-  img.rgb2gray(gray_img);
+  Rbg2Gray(img, gray_img);
   cv::imshow("gray_img", gray_img);
   // cv::imwrite("e:/workplace/C++/img_operator/gray_img.png",gray_img);
 
@@ -71,22 +67,22 @@ int main(int argc, char **argv)
   // cv::imwrite("/mnt/windows/data/workplace/C++/img_operator/dft.png",dimg);
 
   cv::Mat laplacian_img;
-  MY_IMG::ImgFilter(img.GetData(), H1, laplacian_img, true);
+  MY_IMG::ImgFilter(img, H1, laplacian_img, true);
   cv::imshow("H1", laplacian_img);
-  MY_IMG::ImgFilter(img.GetData(), H2, laplacian_img, true);
+  MY_IMG::ImgFilter(img, H2, laplacian_img, true);
   cv::imshow("H2", laplacian_img);
   MY_IMG::ImgFilter(gray_img, H3, laplacian_img, true);
-  cv::imshow("H3",laplacian_img);
-  MY_IMG::ImgFilter(gray_img, H4, laplacian_img,true);
-  cv::imshow("H4",laplacian_img);
-  MY_IMG::ImgFilter(gray_img, H5, laplacian_img,true);
-  cv::imshow("H5",laplacian_img);
-  MY_IMG::ImgFilter(img.GetData(), H6, laplacian_img);
+  cv::imshow("H3", laplacian_img);
+  MY_IMG::ImgFilter(gray_img, H4, laplacian_img, true);
+  cv::imshow("H4", laplacian_img);
+  MY_IMG::ImgFilter(gray_img, H5, laplacian_img, true);
+  cv::imshow("H5", laplacian_img);
+  MY_IMG::ImgFilter(img, H6, laplacian_img);
   cv::imshow("H6", laplacian_img);
-  MY_IMG::ImgFilter(img.GetData(), H7, laplacian_img);
+  MY_IMG::ImgFilter(img, H7, laplacian_img);
   cv::imshow("H7", laplacian_img);
   MY_IMG::ImgFilter(gray_img, H8, laplacian_img);
-  cv::imshow("H8",laplacian_img);
+  cv::imshow("H8", laplacian_img);
 
   // create gauss blur filter and show
   /*
@@ -100,7 +96,7 @@ int main(int argc, char **argv)
         blur_filter.size().width);
     LOG("blur_filter_sum : %f", cv::sum(blur_filter)[0]);
 
-    MY_IMG::ImgFilter(img.GetData(), blur_filter, blur_img);
+    MY_IMG::ImgFilter(img, blur_filter, blur_img);
 
     cv::imshow("blur_filter", blur_img);
   */
