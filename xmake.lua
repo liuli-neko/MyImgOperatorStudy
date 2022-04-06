@@ -4,7 +4,7 @@ add_requires("libpng")
 add_requires("libwebp")
 add_rules("mode.debug","mode.release")
 
-add_includedirs("D:\\APP\\eigen","D:\\APP\\eigen\\eigen","D:\\APP\\eigen\\eigen\\Eigen")
+add_includedirs("D:\\APP\\eigen-3.4.0")
 
 target("main")
     add_includedirs("img_io/")
