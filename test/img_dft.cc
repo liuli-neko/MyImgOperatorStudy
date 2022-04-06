@@ -41,7 +41,8 @@ int main(int argc, char **argv) {
           butter_filter.LowPassFilter(i, j);
     }
   }
-  butter_filter.D0 = 60;
+  butter_filter.D0 = 80;
+  butter_filter.n = 2;
   for (int i = 0; i < gray_img.rows; i++) {
     for (int j = 0; j < gray_img.cols; j++) {
       butter_img_high.at<std::complex<double>>(i, j) =
@@ -78,6 +79,7 @@ int main(int argc, char **argv) {
           gauss_filter.HighPassFilter(i, j);
     }
   }
+
   // get idft
   cv::Mat idft_img;
   t1 = clock();

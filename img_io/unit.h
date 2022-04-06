@@ -40,11 +40,11 @@ struct ButterworthFilter {
     return 1.0 / (1.0 + pow(D / D0, 2 * n));
   }
   double HighPassFilter(double x, double y) {
-    double D = Dist(x, y, center.first / 2, center.second / 2);
+    double D = Dist(x, y, center.first, center.second);
     return 1.0 / (1.0 + pow(D0 / D, 2 * n));
   }
   double BandPassFilter(double x, double y) {
-    double D = Dist(x, y, center.first / 2, center.second / 2);
+    double D = Dist(x, y, center.first, center.second);
     return 1.0 / (1.0 + pow(D * W / (D * D - D0 * D0), 2 * n));
   }
 };
@@ -59,7 +59,7 @@ struct GaussianFilter {
     return exp(-D * D / (2 * D0 * D0));
   }
   double HighPassFilter(double x, double y) {
-    double D = Dist(x, y, center.first / 2, center.second / 2);
+    double D = Dist(x, y, center.first, center.second);
     return 1 - exp(-D * D / (2 * D0 * D0));
   }
 };
