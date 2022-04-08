@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
   // show
   cv::Mat dft_img_abs = ConvertComplexMat2doubleMat(dft_img);
   // std::cout << dft_img_abs << std::endl;
-  cv::imshow("dft_img", dft_img_abs);
+  cv::imshow("dft_img", ConvertDoubleMat2Uint8Mat(dft_img_abs));
 
   // 创建巴特沃斯滤波器
   auto butter_filter =
