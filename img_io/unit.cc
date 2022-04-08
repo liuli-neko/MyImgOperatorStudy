@@ -210,7 +210,7 @@ cv::Mat ConvertComplexMat2doubleMat(const cv::Mat &img) {
   }
   return result;
 }
-cv::Mat ConvertDoubleMat2Uint8Mat(const cv::Mat &img) {
+cv::Mat ConvertDoubleMat2Uint8Mat(const cv::Mat &img,const bool &is_mapping) {
   int height = img.rows;
   int width = img.cols;
   cv::Mat result = cv::Mat(height, width, CV_8UC1);
@@ -218,11 +218,22 @@ cv::Mat ConvertDoubleMat2Uint8Mat(const cv::Mat &img) {
   double min_value = 0;
   double max_value = 0;
   cv::minMaxLoc(img, &min_value, &max_value);
+  LOG("min_value: %f max_value: %f", min_value, max_value);
   // 对每个像素进行转换
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      result.at<uint8_t>(i, j) = static_cast<uint8_t>(
-          255 * (img.at<double>(i, j) - min_value) / (max_value - min_value));
+      if(is_mapping){
+        result.at<uint8_t>(i, j) = static_cast<uint8_t>(
+            255 * (img.at<double>(i, j) - min_value) / (max_value - min_value));
+      }else{
+        if (img.at<double>(i, j) < 0) {
+          result.at<uint8_t>(i, j) = 0;
+        } else if (img.at<double>(i, j) > 255) {
+          result.at<uint8_t>(i, j) = 255;
+        } else {
+          result.at<uint8_t>(i, j) = static_cast<uint8_t>(img.at<double>(i, j));
+        }
+      }
     }
   }
   return result;
@@ -299,7 +310,8 @@ void DFT(const cv::Mat &img, cv::Mat &dft_img) {
   // 傅里叶变换
   Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> dft_mat =
       dft_mat_h * eigen_img * dft_mat_w;
-  dft_mat /= width * height;
+  // dft_mat /= width * height;
+  dft_mat /= sqrt(width * height);
   // LOG("dft_mat size: (%ld,%ld)", dft_mat.rows(), dft_mat.cols());
   // 转换为cv::Mat
   dft_img = ConvertEigen2Mat(dft_mat);
@@ -334,7 +346,8 @@ void IDFT(const cv::Mat &dft_img, cv::Mat &idft_img) {
   // 傅里叶逆变换
   Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> idft_mat =
       idft_mat_h * eigen_img * idft_mat_w;
-  idft_img /= width * height;
+  idft_mat /= sqrt(width * height);
+  // idft_img /= width * height;
   // 转换为cv::Mat
   idft_img = cv::Mat(height, width, CV_8UC1);
   for (int i = 0; i < height; i++) {

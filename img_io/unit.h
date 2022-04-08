@@ -74,7 +74,7 @@ void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg,
 cv::Mat ConvertComplexMat2doubleMat(const cv::Mat &img);
 template <typename T>
 cv::Mat ConvertSingleChannelMat2ComplexMat(const cv::Mat &img);
-cv::Mat ConvertDoubleMat2Uint8Mat(const cv::Mat &img);
+cv::Mat ConvertDoubleMat2Uint8Mat(const cv::Mat &img,const bool &is_mapping = false);
 
 // 定义傅里叶变换的函数声明
 void DFT(const cv::Mat &src, cv::Mat &dst);

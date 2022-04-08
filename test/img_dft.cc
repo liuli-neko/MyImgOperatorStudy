@@ -24,7 +24,9 @@ int main(int argc, char **argv) {
   time_t t2 = clock();
   LOG("DFT time: %f", static_cast<double>(t2 - t1) / 1000.0);
   // show
-  cv::imshow("dft_img", ConvertComplexMat2doubleMat(dft_img));
+  cv::Mat dft_img_abs = ConvertComplexMat2doubleMat(dft_img);
+  // std::cout << dft_img_abs << std::endl;
+  cv::imshow("dft_img", dft_img_abs);
 
   // 创建巴特沃斯滤波器
   auto butter_filter =
