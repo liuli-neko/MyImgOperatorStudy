@@ -32,6 +32,8 @@ int main() {
   Eigen::MatrixXd C = A * B;
   cout << "A * B: " << endl << C << endl;
   cout << C / 4 << endl;
-
+  for (int i = 0;i<4;i++){
+    cout << C(i) << endl;
+  }
   return 0;
 }
