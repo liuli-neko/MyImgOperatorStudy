@@ -25,13 +25,13 @@ int main(int argc, char **argv) {
   time_t t1 = clock();
   CreateGaussBlurFilter(blur_filter, sigma, -1, -1);
   time_t t2 = clock();
-  LOG("CreateGaussBlurFilter time: %f", static_cast<double>(t2 - t1) / 1000.0);
+  LOG("CreateGaussBlurFilter time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
   LOG("blur_filter size: [%d,%d]", blur_filter.rows, blur_filter.cols);
   cv::Mat blur_img;
   t1 = clock();
   MY_IMG::ImgFilter(img, blur_filter, blur_img);
   t2 = clock();
-  LOG("ImgFilter time: %f", static_cast<double>(t2 - t1) / 1000.0);
+  LOG("ImgFilter time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
   cv::imshow("blur_img", blur_img);
   cv::imwrite(output_name, blur_img);
 

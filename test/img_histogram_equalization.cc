@@ -19,13 +19,13 @@ int main(int argc, char **argv) {
   time_t t1 = clock();
   Rbg2Gray(img, gray_img);
   time_t t2 = clock();
-  LOG("rgb2gray time: %f", static_cast<double>(t2 - t1) / 1000.0);
+  LOG("rgb2gray time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
   // then get histogram
   cv::Mat hist_img;
   t1 = clock();
   HistogramEqualization(gray_img, hist_img);
   t2 = clock();
-  LOG("HistogramEqualization time: %f", static_cast<double>(t2 - t1) / 1000.0);
+  LOG("HistogramEqualization time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
   // show
   cv::imshow("hist_img", hist_img);
 
