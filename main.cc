@@ -1,107 +1,75 @@
-#include "unit.h"
-#include <fstream>
 #include <iostream>
-#include <vector>
+#include <unit.h>
+#include <opencv2/opencv.hpp>
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
+std::string img_path = "test.png";
+std::string output = "rota_test.png";
 
-using MY_IMG::CreateGaussBlurFilter;
-using MY_IMG::H1;
-using MY_IMG::H2;
-using MY_IMG::H3;
-using MY_IMG::H4;
-using MY_IMG::H5;
-using MY_IMG::H6;
-using MY_IMG::H7;
-using MY_IMG::H8;
-using MY_IMG::HistogramEqualization;
-using MY_IMG::Rbg2Gray;
+Eigen::Matrix2d rotate_matrix(const double &angle){
+  Eigen::Matrix2d R;
+  R << cos(angle),-sin(angle),
+       sin(angle),cos(angle);
+  return R;
+}
 
-std::string file_name = "./test_img.png";
-
-int main(int argc, char **argv) {
-  double sigma = 1;
-  if (argc >= 2) {
-    file_name = std::string(argv[1]);
-    if (argc >= 3) {
-      sigma = std::stod(argv[2]);
+void rotate_img(const cv::Mat &src,cv::Mat &dst,double angle){
+  angle -= static_cast<int>(angle/M_PI)*M_PI;
+  Eigen::Matrix2d R = rotate_matrix(angle);
+  std::cout << "R:" << std::endl;
+  std::cout << R << std::endl;
+  Eigen::Matrix3d T = Eigen::Matrix3d::Zero();
+  Eigen::Vector3d center = Eigen::Vector3d::Zero();
+  Eigen::Vector3d dst_center = Eigen::Vector3d::Zero();
+  T.block<2,2>(0,0) = R;
+  T(2,2) = 1;
+  std::cout << "T:" << std::endl;
+  std::cout << T << std::endl;
+  // 获取原图像中心点坐标
+  center << src.rows / 2,src.cols / 2,1;
+  // 获取从dst到src的T
+  Eigen::Matrix3d TT = T.inverse();
+  TT.block<3,1>(0,2) = center;
+  std::cout << "TT:" << std::endl;
+  std::cout << TT << std::endl;
+  dst = cv::Mat(src.size(),src.type());
+  auto func = [&src](Eigen::Vector3d pose) -> uint8_t{
+    int x = static_cast<int>(pose[0]),y = static_cast<int>(pose[1]);
+    if(x < 0 || y < 0 || x > src.rows || y > src.cols){
+      return 0;
+    }
+    return src.at<uint8_t>(x,y);
+  };
+  // 不好算范围，所以就不改变图像框大小了，（方案1）
+  for(int i = 0;i < src.rows;i ++) {
+    for(int j = 0;j < src.cols;j ++) {
+      Eigen::Vector3d pose = Eigen::Vector3d::Zero();
+      pose << i - src.rows / 2,j - src.cols / 2,1;
+      dst.at<uint8_t>(i,j) = func(TT*pose);
     }
   }
-  std::ifstream file(file_name, std::ios::binary);
-  if (!file.is_open()) {
-    printf("file open faild\n");
-    return 0;
-  }
-  file.close();
-  // read img and show
-  cv::Mat img = cv::imread(file_name, cv::IMREAD_COLOR);
-  // img.show();
-  // img.save("./test_img_out.png");
-  // make color image to gray and show
-  cv::Mat gray_img;
-  Rbg2Gray(img, gray_img);
-  cv::imshow("gray_img", gray_img);
-  // cv::imwrite("e:/workplace/C++/img_operator/gray_img.png",gray_img);
+}
 
-  // do histogram equalization and show
+int main(int argc, char **argv) {
+
+  img_path = std::string(argv[1]);
+  output = std::string(argv[2]);
+  double angle = std::stod(argv[3]);
+  
+  cv::Mat img = cv::imread(img_path);
+  cv::Mat gray;
+  MY_IMG::Rbg2Gray(img,gray);
+  std::cout << "gray img" << std::endl;
+
   cv::Mat dimg;
-  HistogramEqualization(gray_img, dimg);
-  // cv::imshow("his", dimg);
-  // cv::imwrite("e:/workplace/C++/img_operator/his.png",dimg);
+  rotate_img(gray,dimg,angle);
 
-  // cv::Mat H;
-  // double h[3][3] = {{-2, -1, 0}
-  //                 , {-1, 0, 1}
-  //                 , {0, 1, 2}};
-  // H = cv::Mat(3, 3, CV_64F, h);
-  // cv::Mat H_img;
-  // MY_IMG::ImgFilter(gray_img, H, H_img, true);
-  // cv::imshow("H_img", H_img);
-  // 统计下面代码的运行时间
-  // 获取当前时间
-  // clock_t start, end;
-  // start = clock();
-  // MY_IMG::DFT(gray_img, dimg);
-  // cv::imshow("dft",dimg);
-  // end = clock();
-  // LOG("time:%f", (double)(end - start) / CLOCKS_PER_SEC);
-  // cv::imwrite("/mnt/windows/data/workplace/C++/img_operator/dft.png",dimg);
+  cv::imshow("dimg",dimg);
 
-  cv::Mat laplacian_img;
-  MY_IMG::ImgFilter(img, H1, laplacian_img, true);
-  cv::imshow("H1", laplacian_img);
-  MY_IMG::ImgFilter(img, H2, laplacian_img, true);
-  cv::imshow("H2", laplacian_img);
-  MY_IMG::ImgFilter(gray_img, H3, laplacian_img, true);
-  cv::imshow("H3", laplacian_img);
-  MY_IMG::ImgFilter(gray_img, H4, laplacian_img, true);
-  cv::imshow("H4", laplacian_img);
-  MY_IMG::ImgFilter(gray_img, H5, laplacian_img, true);
-  cv::imshow("H5", laplacian_img);
-  MY_IMG::ImgFilter(img, H6, laplacian_img);
-  cv::imshow("H6", laplacian_img);
-  MY_IMG::ImgFilter(img, H7, laplacian_img);
-  cv::imshow("H7", laplacian_img);
-  MY_IMG::ImgFilter(gray_img, H8, laplacian_img);
-  cv::imshow("H8", laplacian_img);
-
-  // create gauss blur filter and show
-  /*
-    cv::Mat blur_img, blur_img1;
-
-    cv::Mat blur_filter, blur_filter1;
-
-    CreateGaussBlurFilter(blur_filter, sigma, -1, -1);
-
-    LOG("blur_filter :[%d,%d]", blur_filter.size().height,
-        blur_filter.size().width);
-    LOG("blur_filter_sum : %f", cv::sum(blur_filter)[0]);
-
-    MY_IMG::ImgFilter(img, blur_filter, blur_img);
-
-    cv::imshow("blur_filter", blur_img);
-  */
-  // 当图像窗口被关闭时，程序退出
   cv::waitKey(0);
 
+  cv::imwrite(output,dimg);
   return 0;
 }

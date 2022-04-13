@@ -11,6 +11,9 @@ namespace MY_IMG {
 #define LOG(format, ...)                                                       \
   printf("[%s:%d] " format "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 
+// 拉普拉斯算子
+// H1~H5用于图像特征提取
+// H6~H9用于图像锐化
 const cv::Mat H1 = (cv::Mat_<double>(3, 3) << 0, 1, 0, 1, -4, 1, 0, 1, 0);
 const cv::Mat H2 = (cv::Mat_<double>(3, 3) << 1, 1, 1, 1, -8, 1, 1, 1, 1);
 const cv::Mat H3 = (cv::Mat_<double>(3, 3) << 1, -2, 1, -2, 4, -2, 1, -2, 1);
@@ -23,10 +26,12 @@ const cv::Mat H7 =
 const cv::Mat H8 = (cv::Mat_<double>(3, 3) << 0, 1, 0, 1, -5, 1, 0, 1, 0);
 const cv::Mat H9 = (cv::Mat_<double>(3, 3) << 1, 1, 1, 1, -9, 1, 1, 1, 1);
 
+// 两点之间的距离
 inline double Dist(double x1, double y1, double x2, double y2) {
   return sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
 }
 
+// 巴特沃斯算子
 struct ButterworthFilter {
   double D0;
   int n;
@@ -49,6 +54,7 @@ struct ButterworthFilter {
   }
 };
 
+// 高斯算子
 struct GaussianFilter {
   double D0;
   std::pair<double, double> center;
@@ -63,14 +69,40 @@ struct GaussianFilter {
     return 1 - exp(-D * D / (2 * D0 * D0));
   }
 };
-void Rbg2Gray(const cv::Mat &img, cv::Mat &dimg);
-void HistogramEqualization(const cv::Mat &input_img, cv::Mat &output_img);
+/**
+ * @brief 图像灰度化
+ * @param src 原图像
+ * @param dst 灰度化后的图像
+ */
+void Rbg2Gray(const cv::Mat &src, cv::Mat &dst);
+/**
+ * @brief 对图像进行直方图均衡化
+ * @param src 原图像
+ * @param dst 均衡化后的图像
+ */
+void HistogramEqualization(const cv::Mat &src, cv::Mat &dst);
+/**
+ * @brief 创建高斯滤波卷积核
+ * @param filter 滤波核
+ * @param sigma 标准差
+ * @param radim 滤波核半径
+ * @note 滤波核半径为-1时将自动计算
+ */
 void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma,
                            int radim = -1);
 void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma, int radim_h,
                            int radim_w);
-void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg,
+/**
+ * @brief 对图像进行卷积
+ * @param src 原图像
+ * @param dst 卷积后的图像
+ * @param filter 滤波核
+ * @param is_resverse 是否反转卷积后的图像
+ */
+void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dst,
                const bool &is_resverse = false);
+
+// 转换图像存储格式
 cv::Mat ConvertComplexMat2doubleMat(const cv::Mat &img);
 template <typename T>
 cv::Mat ConvertSingleChannelMat2ComplexMat(const cv::Mat &img);
@@ -81,6 +113,9 @@ void DFT(const cv::Mat &src, cv::Mat &dst);
 void IDFT(const cv::Mat &src, cv::Mat &dst);
 void FFT2D(const cv::Mat &src, cv::Mat &dst);
 void IFFT2D(const cv::Mat &src, cv::Mat &dst);
+
+// 形态学操作
+
 } // namespace MY_IMG
 template <typename T>
 cv::Mat MY_IMG::ConvertSingleChannelMat2ComplexMat(const cv::Mat &img) {
