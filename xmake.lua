@@ -96,3 +96,15 @@ target("main")
     if is_mode("debug") then 
         add_defines("DEBUG")
     end
+
+target("img_morphology")
+    add_includedirs("img_io/")
+    add_packages("opencv")
+    add_packages("libjpeg")
+    add_packages("libpng")
+    add_packages("libwebp")
+    add_files("img_io/*.cc")
+    add_files("test/img_morphology.cc")
+    if is_mode("debug") then 
+        add_defines("DEBUG")
+    end

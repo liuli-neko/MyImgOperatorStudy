@@ -115,6 +115,10 @@ void FFT2D(const cv::Mat &src, cv::Mat &dst);
 void IFFT2D(const cv::Mat &src, cv::Mat &dst);
 
 // 形态学操作
+cv::Mat GrayCorrosion(const cv::Mat &src,const cv::Mat &struct_element);
+cv::Mat GrayExpansion(const cv::Mat &src,const cv::Mat &struct_element);
+cv::Mat GrayOpening(const cv::Mat &src,const cv::Mat &struct_element);
+cv::Mat GrayClosing(const cv::Mat &src,const cv::Mat &struct_element);
 
 } // namespace MY_IMG
 template <typename T>

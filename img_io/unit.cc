@@ -438,5 +438,66 @@ void IDFT(const cv::Mat &dft_img, cv::Mat &idft_img) {
     }
   }
 }
-
+cv::Mat GrayCorrosion(const cv::Mat &src,const cv::Mat &struct_element){
+  int height = src.rows;
+  int width = src.cols;
+  int struct_height = struct_element.rows;
+  int struct_width = struct_element.cols;
+  cv::Mat dst = cv::Mat(height,width,CV_8UC1);
+  for (int i = 0;i < height;i++){
+    for(int j = 0;j < width;j ++) {
+      int sum = 1e9;
+      for(int m = 0;m < struct_height;m ++) {
+        for(int n = 0;n < struct_width;n ++) {
+          if(i + m > height || j + n > width) {
+            continue;
+          }
+          sum = std::min(sum,
+          static_cast<int>(src.at<uint8_t>(i + m,j + n)) - static_cast<int>(struct_element.at<uint8_t>(m,n)));
+        }
+      }
+      if(sum < 0) {
+        sum = 0;
+      }else if(sum > 255) {
+        sum = 255;
+      }
+      dst.at<uint8_t>(i,j) = static_cast<uint8_t>(sum);
+    }
+  }
+  return dst;
+}
+cv::Mat GrayExpansion(const cv::Mat &src,const cv::Mat &struct_element){
+  int height = src.rows;
+  int width = src.cols;
+  int struct_height = struct_element.rows;
+  int struct_width = struct_element.cols;
+  cv::Mat dst = cv::Mat(height,width,CV_8UC1);
+  for (int i = 0;i < height;i++){
+    for(int j = 0;j < width;j ++) {
+      int sum = -1e9;
+      for(int m = 0;m < struct_height;m ++) {
+        for(int n = 0;n < struct_width;n ++) {
+          if(i-m < 0 || j-n < 0) {
+            continue;
+          }
+          sum = std::max(sum,
+          static_cast<int>(src.at<uint8_t>(i - m,j - n)) + static_cast<int>(struct_element.at<uint8_t>(m,n)));
+        }
+      }
+      if(sum < 0) {
+        sum = 0;
+      }else if(sum > 255) {
+        sum = 255;
+      }
+      dst.at<uint8_t>(i,j) = static_cast<uint8_t>(sum);
+    }
+  }
+  return dst;
+}
+cv::Mat GrayOpening(const cv::Mat &src,const cv::Mat &struct_element){
+  return GrayExpansion(GrayCorrosion(src,struct_element),struct_element);
+}
+cv::Mat GrayClosing(const cv::Mat &src,const cv::Mat &struct_element){
+  return GrayCorrosion(GrayExpansion(src,struct_element),struct_element);
+}
 } // namespace MY_IMG
