@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   // first get gray img
   cv::Mat gray_img;
   time_t t1 = clock();
-  Rbg2Gray(img, gray_img);
+  Rgb2Gray(img, gray_img);
   time_t t2 = clock();
   LOG("rgb2gray time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
   // then get histogram

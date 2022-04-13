@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   // get dft
   cv::Mat dft_img;
   cv::Mat gray_img;
-  Rbg2Gray(img, gray_img);
+  Rgb2Gray(img, gray_img);
   cv::imshow("gray_img", gray_img);
   time_t t1,t2;
   cv::Mat dft_img_abs,idft_img;

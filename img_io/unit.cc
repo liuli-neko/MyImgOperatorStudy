@@ -10,7 +10,7 @@ namespace MY_IMG {
 
 const double PI = acos(-1);
 
-void Rbg2Gray(const cv::Mat &img, cv::Mat &dimg) {
+void Rgb2Gray(const cv::Mat &img, cv::Mat &dimg) {
   int width = img.cols;
   int height = img.rows;
   dimg = cv::Mat(img.size(), CV_8UC1);
@@ -438,4 +438,5 @@ void IDFT(const cv::Mat &dft_img, cv::Mat &idft_img) {
     }
   }
 }
+
 } // namespace MY_IMG

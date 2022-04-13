@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
   
   cv::Mat img = cv::imread(img_path);
   cv::Mat gray;
-  MY_IMG::Rbg2Gray(img,gray);
+  MY_IMG::Rgb2Gray(img,gray);
   std::cout << "gray img" << std::endl;
 
   cv::Mat dimg;

@@ -74,7 +74,7 @@ struct GaussianFilter {
  * @param src 原图像
  * @param dst 灰度化后的图像
  */
-void Rbg2Gray(const cv::Mat &src, cv::Mat &dst);
+void Rgb2Gray(const cv::Mat &src, cv::Mat &dst);
 /**
  * @brief 对图像进行直方图均衡化
  * @param src 原图像
