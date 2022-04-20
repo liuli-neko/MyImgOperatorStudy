@@ -15,9 +15,9 @@ Eigen::Matrix2d rotate_matrix(const double &angle){
   return R;
 }
 
-void rotate_img(const cv::Mat &src,cv::Mat &dst,double angle){
+void rotate_img(const cv::Mat &src,cv::Mat &dst,double angle,const double &zoom){
   angle -= static_cast<int>(angle/M_PI)*M_PI;
-  Eigen::Matrix2d R = rotate_matrix(angle);
+  Eigen::Matrix2d R = rotate_matrix(angle) * zoom;
   std::cout << "R:" << std::endl;
   std::cout << R << std::endl;
   Eigen::Matrix3d T = Eigen::Matrix3d::Zero();
@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
   std::cout << "gray img" << std::endl;
 
   cv::Mat dimg;
-  rotate_img(gray,dimg,angle);
+  rotate_img(gray,dimg,angle,5);
 
   cv::imshow("dimg",dimg);
 
