@@ -14,71 +14,56 @@ int main(int argc, char **argv) {
     }
   }
   cv::Mat img = cv::imread(file_name, cv::IMREAD_COLOR);
-  // get dft
-  cv::Mat dft_img;
+
   cv::Mat gray_img;
   Rgb2Gray(img, gray_img);
-  cv::imshow("gray_img", gray_img);
+  // cv::imshow("gray_img", gray_img);
   time_t t1,t2;
+  cv::Mat fft_img;
   cv::Mat dft_img_abs,idft_img;
-/*
+
   t1 = clock();
-  DFT(gray_img, dft_img);
+  FFT2D(gray_img, fft_img);
   t2 = clock();
-  LOG("DFT time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
+  LOG("FFT time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
   // show
-  cv::Mat dft_img_abs = ConvertComplexMat2doubleMat(dft_img);
+  dft_img_abs = ConvertComplexMat2doubleMat(fft_img);
   // std::cout << dft_img_abs << std::endl;
   cv::imshow("dft_img", ConvertDoubleMat2Uint8Mat(dft_img_abs));
 
   // 创建巴特沃斯滤波器
   auto butter_filter =
-      ButterworthFilter({gray_img.rows / 2, gray_img.cols / 2});
-  cv::Mat butter_img_low(dft_img.size(), dft_img.type());
+      ButterworthFilter({fft_img.rows / 2, fft_img.cols / 2});
+  cv::Mat butter_img_low(fft_img.size(), fft_img.type());
   // 进行滤波
-  for (int i = 0; i < gray_img.rows; i++) {
-    for (int j = 0; j < gray_img.cols; j++) {
+  for (int i = 0; i < fft_img.rows; i++) {
+    for (int j = 0; j < fft_img.cols; j++) {
       butter_img_low.at<std::complex<double>>(i, j) =
-          dft_img.at<std::complex<double>>(i, j) *
+          fft_img.at<std::complex<double>>(i, j) *
           butter_filter.LowPassFilter(i, j);
     }
   }
 
-  // get idft
-  cv::Mat idft_img;
-  t1 = clock();
-  IDFT(dft_img, idft_img);
-  t2 = clock();
-  LOG("IDFT time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
-  // show
-  cv::imshow("idft_img", idft_img);
-
   // get butterworth low pass
   cv::Mat butter_low_img;
   t1 = clock();
-  IDFT(butter_img_low, butter_low_img);
+  IFFT2D(butter_img_low, butter_low_img);
   t2 = clock();
   LOG("Butterworth low pass time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
+  butter_low_img = butter_low_img(cv::Range(0,gray_img.rows),cv::Range(0,gray_img.cols));
   // show
   cv::imshow("butter_low_img", butter_low_img);
-*/
-  cv::Mat fft_img;
-  t1 = clock();
-  FFT2D(gray_img,fft_img);
-  t2 = clock();
-  LOG("FFT using time : %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
-  dft_img_abs = ConvertComplexMat2doubleMat(fft_img)(cv::Range(0,gray_img.rows),cv::Range(0,gray_img.cols));
-  cv::imshow("fft_img", ConvertDoubleMat2Uint8Mat(dft_img_abs));
+
   // 创建高斯滤波器
   auto gauss_filter =
-      GaussianFilter({fft_img.rows / 2, fft_img.cols / 2}, 10);
+      GaussianFilter({fft_img.rows / 2, fft_img.cols / 2}, 50);
   cv::Mat gauss_img_low(fft_img.size(), fft_img.type());
   // 进行滤波
   for (int i = 0; i < fft_img.rows; i++) {
     for (int j = 0; j < fft_img.cols; j++) {
       gauss_img_low.at<std::complex<double>>(i, j) =
           fft_img.at<std::complex<double>>(i, j) *
-          gauss_filter.LowPassFilter(i, j);
+          gauss_filter.HighPassFilter(i, j);
     }
   }
 
