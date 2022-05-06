@@ -1,35 +1,29 @@
 #include "unit.h"
-#include <Eigen/Core>
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
-#include <cmath>
-#include <complex>
-#include <functional>
 
 namespace MY_IMG {
 
 const double PI = acos(-1);
 
-void Rgb2Gray(const cv::Mat &img, cv::Mat &dimg) {
+void Rgb2Gray(const IMG_Mat &img, IMG_Mat &dimg,const std::vector<double> &w) {
   int width = img.cols;
   int height = img.rows;
-  dimg = cv::Mat(img.size(), CV_8UC1);
+  dimg = IMG_Mat(img.size(), CV_8UC1);
 
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
       const cv::Vec3b &pixel = img.at<cv::Vec3b>(i, j);
 
       dimg.at<uint8_t>(i, j) =
-          0.2989 * pixel[0] + 0.5870 * pixel[1] + 0.1140 * pixel[2];
+          w[0] * pixel[0] + w[1] * pixel[1] + w[2] * pixel[2];
     }
   }
 }
 
-void HistogramEqualization(const cv::Mat &input_img, cv::Mat &output_img) {
+void HistogramEqualization(const IMG_Mat &input_img, IMG_Mat &output_img) {
   auto height = input_img.rows;
   auto width = input_img.cols;
 
-  output_img = cv::Mat(input_img.size(), input_img.type());
+  output_img = IMG_Mat(input_img.size(), input_img.type());
 
   // 统计灰度分布
   uint32_t n[GRAY_MAX + 1];
@@ -65,7 +59,7 @@ double gaussFunction(const double sigma, const double x, const double n) {
   return 1.0 / pow(2 * PI, n) * exp(-x / (2 * sigma * sigma));
 }
 
-void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma, int radim) {
+void CreateGaussBlurFilter(IMG_Mat &filter, const double &sigma, int radim) {
   if (radim == -1) {
     int i = 0;
     double val = gaussFunction(sigma, 0, 0.5);
@@ -75,7 +69,7 @@ void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma, int radim) {
     radim = i * 2;
   }
 
-  filter = cv::Mat(radim + 1, 1, CV_64F);
+  filter = IMG_Mat(radim + 1, 1, CV_64F);
 
   for (int i = 0; i <= radim / 2; i++) {
     filter.at<double>(i + radim / 2) = filter.at<double>(radim / 2 - i) =
@@ -85,7 +79,7 @@ void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma, int radim) {
   filter /= cv::sum(filter)[0];
 }
 // 生成二维高斯滤波器
-void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma, int radim_h,
+void CreateGaussBlurFilter(IMG_Mat &filter, const double &sigma, int radim_h,
                            int radim_w) {
   if (radim_h == -1) {
     int i = 0;
@@ -100,8 +94,8 @@ void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma, int radim_h,
     radim_w = radim_h;
   }
 
-  filter = cv::Mat(radim_h + 1, radim_w + 1, CV_64F);
-
+  filter = IMG_Mat(radim_h + 1, radim_w + 1, CV_64F);
+  double sum = 0;
   for (int i = 0; i <= radim_h / 2; i++) {
     for (int j = 0; j <= radim_w / 2; j++) {
       filter.at<double>(i + radim_h / 2, j + radim_w / 2) =
@@ -111,18 +105,22 @@ void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma, int radim_h,
                       gaussFunction(sigma, i * i + j * j, 1);
     }
   }
-
-  filter /= cv::sum(filter)[0];
+  for (int i = 0;i < radim_h + 1;i ++) {
+    for (int j = 0;j < radim_w + 1;j ++) {
+      sum += filter.at<double>(i, j);
+    }
+  }
+  filter /= sum;
 }
 
-void filter2d_(const cv::Mat &input_img, cv::Mat &output_img,
-               const cv::Mat &filter) {
+void filter2d_(const IMG_Mat &input_img, IMG_Mat &output_img,
+               const IMG_Mat &filter) {
   int height = input_img.rows;
   int width = input_img.cols;
   int filter_height = filter.rows;
   int filter_width = filter.cols;
 
-  cv::Mat tmp_buffer = cv::Mat(height, width, CV_8UC1);
+  IMG_Mat tmp_buffer = IMG_Mat(height, width, CV_8UC1);
 
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < height; i++) {
@@ -162,7 +160,7 @@ void filter2d_(const cv::Mat &input_img, cv::Mat &output_img,
   tmp_buffer.copyTo(output_img);
 }
 
-void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg,
+void ImgFilter(const IMG_Mat &img, const IMG_Mat &filter, IMG_Mat &dimg,
                const bool &is_resverse) {
   int width = img.cols;
   int height = img.rows;
@@ -170,7 +168,7 @@ void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg,
   int radim_w = static_cast<int>(filter.rows - 1);
   assert(width > radim_w && height > radim_h);
 
-  dimg = cv::Mat(img.size(), img.type());
+  dimg = IMG_Mat(img.size(), img.type());
 
   // 获取图像类型和该类型变量的类型
   const int type = img.type();
@@ -180,9 +178,9 @@ void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg,
   LOG("type_size: %d type_code: %d", type_size, type_code);
 
   // 分配内存
-  cv::Mat temp_img[type_size];
+  IMG_Mat temp_img[type_size];
   for (int i = 0; i < type_size; i++) {
-    temp_img[i] = cv::Mat(height, width, CV_8UC1);
+    temp_img[i] = IMG_Mat(height, width, CV_8UC1);
   }
 
   // 分离通道
@@ -200,10 +198,10 @@ void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dimg,
   // 合并通道
   cv::merge(temp_img, type_size, dimg);
 }
-cv::Mat ConvertComplexMat2doubleMat(const cv::Mat &img) {
+IMG_Mat ConvertComplexMat2doubleMat(const IMG_Mat &img) {
   int height = img.rows;
   int width = img.cols;
-  cv::Mat result = cv::Mat(height, width, CV_64FC1);
+  IMG_Mat result = IMG_Mat(height, width, CV_64FC1);
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
       result.at<double>(i, j) = std::abs(img.at<std::complex<double>>(i, j));
@@ -211,10 +209,10 @@ cv::Mat ConvertComplexMat2doubleMat(const cv::Mat &img) {
   }
   return result;
 }
-cv::Mat ConvertDoubleMat2Uint8Mat(const cv::Mat &img,const bool &is_mapping) {
+IMG_Mat ConvertDoubleMat2Uint8Mat(const IMG_Mat &img,const bool &is_mapping) {
   int height = img.rows;
   int width = img.cols;
-  cv::Mat result = cv::Mat(height, width, CV_8UC1);
+  IMG_Mat result = IMG_Mat(height, width, CV_8UC1);
   // 获取图像中最大值和最小值
   double min_value = 0;
   double max_value = 0;
@@ -239,7 +237,7 @@ cv::Mat ConvertDoubleMat2Uint8Mat(const cv::Mat &img,const bool &is_mapping) {
   return result;
 }
 Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>
-ConvertMat2Eigen(const cv::Mat &img) {
+ConvertMat2Eigen(const IMG_Mat &img) {
   int height = img.rows;
   int width = img.cols;
   Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> result(
@@ -253,12 +251,12 @@ ConvertMat2Eigen(const cv::Mat &img) {
   // LOG("Mat: (%d,%d)", img.rows, img.cols);
   return result;
 }
-cv::Mat ConvertEigen2Mat(
+IMG_Mat ConvertEigen2Mat(
     const Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>
         &img) {
   int height = img.rows();
   int width = img.cols();
-  cv::Mat result = cv::Mat(height, width, CV_64FC2);
+  IMG_Mat result = IMG_Mat(height, width, CV_64FC2);
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
       result.at<std::complex<double>>(i, j) = img(i, j);
@@ -276,7 +274,7 @@ void _fftShift(Eigen::Matrix<std::complex<double>,Eigen::Dynamic,Eigen::Dynamic>
     }
   }
 }
-void _fftShift(cv::Mat &img){
+void _fftShift(IMG_Mat &img){
   int height = img.rows;
   int width = img.cols;
   for(int i = 0;i<height;i ++){
@@ -333,7 +331,7 @@ void _fft_core(std::vector<std::complex<double>> &src,const bool &is_fft) {
     }
   }
 }
-void _fft2D(const cv::Mat &img,cv::Mat &dft_img,const bool &is_fft) {
+void _fft2D(const IMG_Mat &img,IMG_Mat &dft_img,const bool &is_fft) {
   int height = img.rows;
   int width = img.cols;
   int lim_height = 1,lim_width = 1;
@@ -343,7 +341,7 @@ void _fft2D(const cv::Mat &img,cv::Mat &dft_img,const bool &is_fft) {
   while(lim_width < width){
     lim_width <<= 1;
   }
-  dft_img = cv::Mat(lim_height,lim_width,CV_64FC2);
+  dft_img = IMG_Mat(lim_height,lim_width,CV_64FC2);
   std::vector<std::complex<double>> tmp;
   tmp.resize(lim_width,{0,0});
   LOG("width : %d,size : %ld",width,tmp.size());
@@ -371,18 +369,18 @@ void _fft2D(const cv::Mat &img,cv::Mat &dft_img,const bool &is_fft) {
     }
   }
 }
-void FFT2D(const cv::Mat &img,cv::Mat &dft_img) {
-  cv::Mat temp_img = ConvertSingleChannelMat2ComplexMat<uint8_t>(img);
+void FFT2D(const IMG_Mat &img,IMG_Mat &dft_img) {
+  IMG_Mat temp_img = ConvertSingleChannelMat2ComplexMat<uint8_t>(img);
   _fftShift(temp_img);
   _fft2D(temp_img,dft_img,true);
 }
-void IFFT2D(const cv::Mat &img,cv::Mat &dft_img) {
-  cv::Mat temp_img;
+void IFFT2D(const IMG_Mat &img,IMG_Mat &dft_img) {
+  IMG_Mat temp_img;
   _fft2D(img,temp_img,false);
   _fftShift(temp_img);
   int height = img.rows;
   int width = img.cols;
-  dft_img = cv::Mat(img.size(),CV_8UC1);
+  dft_img = IMG_Mat(img.size(),CV_8UC1);
   for (int i = 0;i < height;i++){
     for(int j = 0; j < width;j ++) {
       int value = static_cast<int>(temp_img.at<std::complex<double> >(i,j).real());
@@ -395,9 +393,9 @@ void IFFT2D(const cv::Mat &img,cv::Mat &dft_img) {
     }
   }
 }
-void DFT(const cv::Mat &img, cv::Mat &dft_img) {
+void DFT(const IMG_Mat &img, IMG_Mat &dft_img) {
   // 将图像转换为复数矩阵
-  cv::Mat temp_img = ConvertSingleChannelMat2ComplexMat<uint8_t>(img);
+  IMG_Mat temp_img = ConvertSingleChannelMat2ComplexMat<uint8_t>(img);
   // LOG("temp_img size(fftshift): (%ld,%ld)", temp_img.rows, temp_img.cols);
   Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>
       eigen_img = ConvertMat2Eigen(temp_img);
@@ -407,12 +405,12 @@ void DFT(const cv::Mat &img, cv::Mat &dft_img) {
   _dft_core(eigen_img, dft_mat, [](double x, double u, double N) {
         return std::exp(std::complex<double>(0, -2 * M_PI * x * u / N));
   });
-  // 转换为cv::Mat
+  // 转换为IMG_Mat
   dft_img = ConvertEigen2Mat(dft_mat);
   // LOG("dft_img size: (%d,%d)", dft_img.rows, dft_img.cols);
 }
 
-void IDFT(const cv::Mat &dft_img, cv::Mat &idft_img) {
+void IDFT(const IMG_Mat &dft_img, IMG_Mat &idft_img) {
   int height = dft_img.rows;
   int width = dft_img.cols;
   // 将图像转换为复数矩阵
@@ -424,8 +422,8 @@ void IDFT(const cv::Mat &dft_img, cv::Mat &idft_img) {
         return std::exp(std::complex<double>(0, 2 * M_PI * x * u / N));
   });
   _fftShift(idft_mat);
-  // 转换为cv::Mat
-  idft_img = cv::Mat(height, width, CV_8UC1);
+  // 转换为IMG_Mat
+  idft_img = IMG_Mat(height, width, CV_8UC1);
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
       int value =
@@ -438,12 +436,12 @@ void IDFT(const cv::Mat &dft_img, cv::Mat &idft_img) {
     }
   }
 }
-cv::Mat GrayCorrosion(const cv::Mat &src,const cv::Mat &struct_element){
+IMG_Mat GrayCorrosion(const IMG_Mat &src,const IMG_Mat &struct_element){
   int height = src.rows;
   int width = src.cols;
   int struct_height = struct_element.rows;
   int struct_width = struct_element.cols;
-  cv::Mat dst = cv::Mat(height,width,CV_8UC1);
+  IMG_Mat dst = IMG_Mat(height,width,CV_8UC1);
   for (int i = 0;i < height;i++){
     for(int j = 0;j < width;j ++) {
       int sum = 1e9;
@@ -466,12 +464,12 @@ cv::Mat GrayCorrosion(const cv::Mat &src,const cv::Mat &struct_element){
   }
   return dst;
 }
-cv::Mat GrayExpansion(const cv::Mat &src,const cv::Mat &struct_element){
+IMG_Mat GrayExpansion(const IMG_Mat &src,const IMG_Mat &struct_element){
   int height = src.rows;
   int width = src.cols;
   int struct_height = struct_element.rows;
   int struct_width = struct_element.cols;
-  cv::Mat dst = cv::Mat(height,width,CV_8UC1);
+  IMG_Mat dst = IMG_Mat(height,width,CV_8UC1);
   for (int i = 0;i < height;i++){
     for(int j = 0;j < width;j ++) {
       int sum = -1e9;
@@ -494,10 +492,10 @@ cv::Mat GrayExpansion(const cv::Mat &src,const cv::Mat &struct_element){
   }
   return dst;
 }
-cv::Mat GrayOpening(const cv::Mat &src,const cv::Mat &struct_element){
+IMG_Mat GrayOpening(const IMG_Mat &src,const IMG_Mat &struct_element){
   return GrayExpansion(GrayCorrosion(src,struct_element),struct_element);
 }
-cv::Mat GrayClosing(const cv::Mat &src,const cv::Mat &struct_element){
+IMG_Mat GrayClosing(const IMG_Mat &src,const IMG_Mat &struct_element){
   return GrayCorrosion(GrayExpansion(src,struct_element),struct_element);
 }
 } // namespace MY_IMG

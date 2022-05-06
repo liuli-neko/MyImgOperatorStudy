@@ -9,10 +9,10 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin)
 # add_subdirectory(Eigen3 REQUIRED)
 # include_directories(${EIGEN3_INCLUDE_DIRS})
 
-include_directories("img_io/")
+include_directories("unit/")
 include_directories("/usr/include/eigen3")
 
-add_subdirectory(img_io)
+add_subdirectory(unit)
 add_subdirectory(test)
 
 add_executable(main main.cc)

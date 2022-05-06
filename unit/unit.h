@@ -1,9 +1,7 @@
 #ifndef IMG_IO_UNIT_H_
 #define IMG_IO_UNIT_H_
 
-#include <iostream>
-#include <opencv2/opencv.hpp>
-#include <vector>
+#include "all.h"
 
 namespace MY_IMG {
 
@@ -14,17 +12,17 @@ namespace MY_IMG {
 // 拉普拉斯算子
 // H1~H5用于图像特征提取
 // H6~H9用于图像锐化
-const cv::Mat H1 = (cv::Mat_<double>(3, 3) << 0, 1, 0, 1, -4, 1, 0, 1, 0);
-const cv::Mat H2 = (cv::Mat_<double>(3, 3) << 1, 1, 1, 1, -8, 1, 1, 1, 1);
-const cv::Mat H3 = (cv::Mat_<double>(3, 3) << 1, -2, 1, -2, 4, -2, 1, -2, 1);
-const cv::Mat H4 = (cv::Mat_<double>(3, 3) << 0, -1, 0, -1, 4, -1, 0, -1, 0);
-const cv::Mat H5 =
+const IMG_Mat H1 = (cv::Mat_<double>(3, 3) << 0, 1, 0, 1, -4, 1, 0, 1, 0);
+const IMG_Mat H2 = (cv::Mat_<double>(3, 3) << 1, 1, 1, 1, -8, 1, 1, 1, 1);
+const IMG_Mat H3 = (cv::Mat_<double>(3, 3) << 1, -2, 1, -2, 4, -2, 1, -2, 1);
+const IMG_Mat H4 = (cv::Mat_<double>(3, 3) << 0, -1, 0, -1, 4, -1, 0, -1, 0);
+const IMG_Mat H5 =
     (cv::Mat_<double>(3, 3) << -1, -1, -1, -1, 8, -1, -1, -1, -1);
-const cv::Mat H6 = (cv::Mat_<double>(3, 3) << 0, -1, 0, -1, 5, -1, 0, -1, 0);
-const cv::Mat H7 =
+const IMG_Mat H6 = (cv::Mat_<double>(3, 3) << 0, -1, 0, -1, 5, -1, 0, -1, 0);
+const IMG_Mat H7 =
     (cv::Mat_<double>(3, 3) << -1, -1, -1, -1, 9, -1, -1, -1, -1);
-const cv::Mat H8 = (cv::Mat_<double>(3, 3) << 0, 1, 0, 1, -5, 1, 0, 1, 0);
-const cv::Mat H9 = (cv::Mat_<double>(3, 3) << 1, 1, 1, 1, -9, 1, 1, 1, 1);
+const IMG_Mat H8 = (cv::Mat_<double>(3, 3) << 0, 1, 0, 1, -5, 1, 0, 1, 0);
+const IMG_Mat H9 = (cv::Mat_<double>(3, 3) << 1, 1, 1, 1, -9, 1, 1, 1, 1);
 
 // 两点之间的距离
 inline double Dist(double x1, double y1, double x2, double y2) {
@@ -74,13 +72,13 @@ struct GaussianFilter {
  * @param src 原图像
  * @param dst 灰度化后的图像
  */
-void Rgb2Gray(const cv::Mat &src, cv::Mat &dst);
+void Rgb2Gray(const IMG_Mat &src, IMG_Mat &dst,const std::vector<double> &w = {0.299, 0.587, 0.114});
 /**
  * @brief 对图像进行直方图均衡化
  * @param src 原图像
  * @param dst 均衡化后的图像
  */
-void HistogramEqualization(const cv::Mat &src, cv::Mat &dst);
+void HistogramEqualization(const IMG_Mat &src, IMG_Mat &dst);
 /**
  * @brief 创建高斯滤波卷积核
  * @param filter 滤波核
@@ -88,9 +86,9 @@ void HistogramEqualization(const cv::Mat &src, cv::Mat &dst);
  * @param radim 滤波核半径
  * @note 滤波核半径为-1时将自动计算
  */
-void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma,
+void CreateGaussBlurFilter(IMG_Mat &filter, const double &sigma,
                            int radim = -1);
-void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma, int radim_h,
+void CreateGaussBlurFilter(IMG_Mat &filter, const double &sigma, int radim_h,
                            int radim_w);
 /**
  * @brief 对图像进行卷积
@@ -99,33 +97,33 @@ void CreateGaussBlurFilter(cv::Mat &filter, const double &sigma, int radim_h,
  * @param filter 滤波核
  * @param is_resverse 是否反转卷积后的图像
  */
-void ImgFilter(const cv::Mat &img, const cv::Mat &filter, cv::Mat &dst,
+void ImgFilter(const IMG_Mat &img, const IMG_Mat &filter, IMG_Mat &dst,
                const bool &is_resverse = false);
 
 // 转换图像存储格式
-cv::Mat ConvertComplexMat2doubleMat(const cv::Mat &img);
+IMG_Mat ConvertComplexMat2doubleMat(const IMG_Mat &img);
 template <typename T>
-cv::Mat ConvertSingleChannelMat2ComplexMat(const cv::Mat &img);
-cv::Mat ConvertDoubleMat2Uint8Mat(const cv::Mat &img,const bool &is_mapping = false);
+IMG_Mat ConvertSingleChannelMat2ComplexMat(const IMG_Mat &img);
+IMG_Mat ConvertDoubleMat2Uint8Mat(const IMG_Mat &img,const bool &is_mapping = false);
 
 // 定义傅里叶变换的函数声明
-void DFT(const cv::Mat &src, cv::Mat &dst);
-void IDFT(const cv::Mat &src, cv::Mat &dst);
-void FFT2D(const cv::Mat &src, cv::Mat &dst);
-void IFFT2D(const cv::Mat &src, cv::Mat &dst);
+void DFT(const IMG_Mat &src, IMG_Mat &dst);
+void IDFT(const IMG_Mat &src, IMG_Mat &dst);
+void FFT2D(const IMG_Mat &src, IMG_Mat &dst);
+void IFFT2D(const IMG_Mat &src, IMG_Mat &dst);
 
 // 形态学操作
-cv::Mat GrayCorrosion(const cv::Mat &src,const cv::Mat &struct_element);
-cv::Mat GrayExpansion(const cv::Mat &src,const cv::Mat &struct_element);
-cv::Mat GrayOpening(const cv::Mat &src,const cv::Mat &struct_element);
-cv::Mat GrayClosing(const cv::Mat &src,const cv::Mat &struct_element);
+IMG_Mat GrayCorrosion(const IMG_Mat &src,const IMG_Mat &struct_element);
+IMG_Mat GrayExpansion(const IMG_Mat &src,const IMG_Mat &struct_element);
+IMG_Mat GrayOpening(const IMG_Mat &src,const IMG_Mat &struct_element);
+IMG_Mat GrayClosing(const IMG_Mat &src,const IMG_Mat &struct_element);
 
 } // namespace MY_IMG
 template <typename T>
-cv::Mat MY_IMG::ConvertSingleChannelMat2ComplexMat(const cv::Mat &img) {
+IMG_Mat MY_IMG::ConvertSingleChannelMat2ComplexMat(const IMG_Mat &img) {
   int height = img.rows;
   int width = img.cols;
-  cv::Mat result = cv::Mat(height, width, CV_64FC2);
+  IMG_Mat result = IMG_Mat(height, width, CV_64FC2);
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
       result.at<std::complex<double>>(i, j) =

@@ -15,7 +15,7 @@ find_package(GLUT REQUIRED)
 include_directories(${OpenGL_INCLUD_DIRS})
 include_directories(${GLUT_INCLUD_DIRS})
 
-include_directories("../img_io")
+include_directories("../unit")
 
 add_executable(mat_test mat_test.cc)
 add_executable(gl_test gl_test.cc)
