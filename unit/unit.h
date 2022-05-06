@@ -1,13 +1,12 @@
-#ifndef IMG_IO_UNIT_H_
-#define IMG_IO_UNIT_H_
-
+#ifndef IMG_OPERATOR_UNIT_UNTI_H_
+#define IMG_OPERATOR_UNIT_UNTI_H_
+#define USE_OPENCV
+#define USE_EIGEN
 #include "all.h"
 
 namespace MY_IMG {
 
 #define GRAY_MAX 255
-#define LOG(format, ...)                                                       \
-  printf("[%s:%d] " format "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 
 // 拉普拉斯算子
 // H1~H5用于图像特征提取
@@ -72,7 +71,8 @@ struct GaussianFilter {
  * @param src 原图像
  * @param dst 灰度化后的图像
  */
-void Rgb2Gray(const IMG_Mat &src, IMG_Mat &dst,const std::vector<double> &w = {0.299, 0.587, 0.114});
+void Rgb2Gray(const IMG_Mat &src, IMG_Mat &dst,
+              const std::vector<double> &w = {0.299, 0.587, 0.114});
 /**
  * @brief 对图像进行直方图均衡化
  * @param src 原图像
@@ -104,7 +104,8 @@ void ImgFilter(const IMG_Mat &img, const IMG_Mat &filter, IMG_Mat &dst,
 IMG_Mat ConvertComplexMat2doubleMat(const IMG_Mat &img);
 template <typename T>
 IMG_Mat ConvertSingleChannelMat2ComplexMat(const IMG_Mat &img);
-IMG_Mat ConvertDoubleMat2Uint8Mat(const IMG_Mat &img,const bool &is_mapping = false);
+IMG_Mat ConvertDoubleMat2Uint8Mat(const IMG_Mat &img,
+                                  const bool &is_mapping = false);
 
 // 定义傅里叶变换的函数声明
 void DFT(const IMG_Mat &src, IMG_Mat &dst);
@@ -113,10 +114,10 @@ void FFT2D(const IMG_Mat &src, IMG_Mat &dst);
 void IFFT2D(const IMG_Mat &src, IMG_Mat &dst);
 
 // 形态学操作
-IMG_Mat GrayCorrosion(const IMG_Mat &src,const IMG_Mat &struct_element);
-IMG_Mat GrayExpansion(const IMG_Mat &src,const IMG_Mat &struct_element);
-IMG_Mat GrayOpening(const IMG_Mat &src,const IMG_Mat &struct_element);
-IMG_Mat GrayClosing(const IMG_Mat &src,const IMG_Mat &struct_element);
+IMG_Mat GrayCorrosion(const IMG_Mat &src, const IMG_Mat &struct_element);
+IMG_Mat GrayExpansion(const IMG_Mat &src, const IMG_Mat &struct_element);
+IMG_Mat GrayOpening(const IMG_Mat &src, const IMG_Mat &struct_element);
+IMG_Mat GrayClosing(const IMG_Mat &src, const IMG_Mat &struct_element);
 
 } // namespace MY_IMG
 template <typename T>

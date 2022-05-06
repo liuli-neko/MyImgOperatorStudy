@@ -4,7 +4,7 @@ namespace MY_IMG {
 
 const double PI = acos(-1);
 
-void Rgb2Gray(const IMG_Mat &img, IMG_Mat &dimg,const std::vector<double> &w) {
+void Rgb2Gray(const IMG_Mat &img, IMG_Mat &dimg, const std::vector<double> &w) {
   int width = img.cols;
   int height = img.rows;
   dimg = IMG_Mat(img.size(), CV_8UC1);
@@ -105,8 +105,8 @@ void CreateGaussBlurFilter(IMG_Mat &filter, const double &sigma, int radim_h,
                       gaussFunction(sigma, i * i + j * j, 1);
     }
   }
-  for (int i = 0;i < radim_h + 1;i ++) {
-    for (int j = 0;j < radim_w + 1;j ++) {
+  for (int i = 0; i < radim_h + 1; i++) {
+    for (int j = 0; j < radim_w + 1; j++) {
       sum += filter.at<double>(i, j);
     }
   }
@@ -209,7 +209,7 @@ IMG_Mat ConvertComplexMat2doubleMat(const IMG_Mat &img) {
   }
   return result;
 }
-IMG_Mat ConvertDoubleMat2Uint8Mat(const IMG_Mat &img,const bool &is_mapping) {
+IMG_Mat ConvertDoubleMat2Uint8Mat(const IMG_Mat &img, const bool &is_mapping) {
   int height = img.rows;
   int width = img.cols;
   IMG_Mat result = IMG_Mat(height, width, CV_8UC1);
@@ -220,10 +220,10 @@ IMG_Mat ConvertDoubleMat2Uint8Mat(const IMG_Mat &img,const bool &is_mapping) {
   // 对每个像素进行转换
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      if(is_mapping){
+      if (is_mapping) {
         result.at<uint8_t>(i, j) = static_cast<uint8_t>(
             255 * (img.at<double>(i, j) - min_value) / (max_value - min_value));
-      }else{
+      } else {
         if (img.at<double>(i, j) < 0) {
           result.at<uint8_t>(i, j) = 0;
         } else if (img.at<double>(i, j) > 255) {
@@ -265,7 +265,8 @@ IMG_Mat ConvertEigen2Mat(
   return result;
 }
 // 设置图像偏移n/2，m/2
-void _fftShift(Eigen::Matrix<std::complex<double>,Eigen::Dynamic,Eigen::Dynamic> &img) {
+void _fftShift(
+    Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> &img) {
   int height = img.rows();
   int width = img.cols();
   for (int i = 0; i < height; i++) {
@@ -274,122 +275,128 @@ void _fftShift(Eigen::Matrix<std::complex<double>,Eigen::Dynamic,Eigen::Dynamic>
     }
   }
 }
-void _fftShift(IMG_Mat &img){
+void _fftShift(IMG_Mat &img) {
   int height = img.rows;
   int width = img.cols;
-  for(int i = 0;i<height;i ++){
-    for(int j = 0;j < width;j ++) {
-      img.at<std::complex<double> >(i,j) *= pow(-1,i + j);
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      img.at<std::complex<double>>(i, j) *= pow(-1, i + j);
     }
   }
 }
-void _dft_core(const Eigen::Matrix<std::complex<double>,Eigen::Dynamic,Eigen::Dynamic> &img,
-    Eigen::Matrix<std::complex<double>,Eigen::Dynamic,Eigen::Dynamic> &dimg,
-    std::function<std::complex<double>(double,double,double)> kernel) {
+void _dft_core(
+    const Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>
+        &img,
+    Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> &dimg,
+    std::function<std::complex<double>(double, double, double)> kernel) {
   int height = img.rows();
   int width = img.cols();
-  Eigen::Matrix<std::complex<double>,Eigen::Dynamic,Eigen::Dynamic> dft_mat_w(width,width);
-  Eigen::Matrix<std::complex<double>,Eigen::Dynamic,Eigen::Dynamic> dft_mat_h(height,height);
-  for(int i = 0;i < width;i++){
-    for(int j = 0;j < width;j++){
-      dft_mat_w(i,j) = kernel(i,j,width);
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> dft_mat_w(
+      width, width);
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> dft_mat_h(
+      height, height);
+  for (int i = 0; i < width; i++) {
+    for (int j = 0; j < width; j++) {
+      dft_mat_w(i, j) = kernel(i, j, width);
     }
   }
-  for(int i = 0;i < height;i++){
-    for(int j = 0;j < height;j++){
-      dft_mat_h(i,j) = kernel(i,j,height);
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < height; j++) {
+      dft_mat_h(i, j) = kernel(i, j, height);
     }
   }
   dimg = dft_mat_h * img * dft_mat_w;
   dimg /= sqrt(width * height);
 }
 
-void _fft_core(std::vector<std::complex<double>> &src,const bool &is_fft) {
-  int lim = src.size(),len = 0;
-  while((1<<len) < lim){
-    len ++;
+void _fft_core(std::vector<std::complex<double>> &src, const bool &is_fft) {
+  int lim = src.size(), len = 0;
+  while ((1 << len) < lim) {
+    len++;
   }
-  std::vector<int> rev(lim,0);
-  for(int i = 0; i < lim;i ++) {
+  std::vector<int> rev(lim, 0);
+  for (int i = 0; i < lim; i++) {
     rev.at(i) = (rev.at(i >> 1) >> 1) | ((i & 1) << (len - 1));
   }
 
-  for(int i  = 0;i < lim;i ++ ) {
-    if(i < rev.at(i)){
-      std::swap(src.at(i),src.at(rev.at(i)));
+  for (int i = 0; i < lim; i++) {
+    if (i < rev.at(i)) {
+      std::swap(src.at(i), src.at(rev.at(i)));
     }
   }
-  int opt = (is_fft?-1:1);
-  for(int m = 1;m <= lim;m <<= 1){
-    std::complex<double> wn(cos(2.0 * M_PI / m),opt * sin(2.0 * M_PI / m));
-    for (int i = 0;i < lim; i += m) {
-      std::complex<double> w (1,0);
-      for (int j = 0;j < (m >> 1);j ++,w = w * wn) {
-        std::complex<double> u = src.at(i + j),t = w * src.at(i + j + (m >> 1));
-        src.at(i + j) = u + t,src.at(i + j + (m >> 1)) = u - t;
+  int opt = (is_fft ? -1 : 1);
+  for (int m = 1; m <= lim; m <<= 1) {
+    std::complex<double> wn(cos(2.0 * M_PI / m), opt * sin(2.0 * M_PI / m));
+    for (int i = 0; i < lim; i += m) {
+      std::complex<double> w(1, 0);
+      for (int j = 0; j < (m >> 1); j++, w = w * wn) {
+        std::complex<double> u = src.at(i + j),
+                             t = w * src.at(i + j + (m >> 1));
+        src.at(i + j) = u + t, src.at(i + j + (m >> 1)) = u - t;
       }
     }
   }
 }
-void _fft2D(const IMG_Mat &img,IMG_Mat &dft_img,const bool &is_fft) {
+void _fft2D(const IMG_Mat &img, IMG_Mat &dft_img, const bool &is_fft) {
   int height = img.rows;
   int width = img.cols;
-  int lim_height = 1,lim_width = 1;
-  while(lim_height < height){
+  int lim_height = 1, lim_width = 1;
+  while (lim_height < height) {
     lim_height <<= 1;
   }
-  while(lim_width < width){
+  while (lim_width < width) {
     lim_width <<= 1;
   }
-  dft_img = IMG_Mat(lim_height,lim_width,CV_64FC2);
+  dft_img = IMG_Mat(lim_height, lim_width, CV_64FC2);
   std::vector<std::complex<double>> tmp;
-  tmp.resize(lim_width,{0,0});
-  LOG("width : %d,size : %ld",width,tmp.size());
-  for (int i = 0;i<height;i++){
-    for(int j = 0;j<width;j ++){
-      tmp.at(j) = img.at<std::complex<double>>(i,j);
+  tmp.resize(lim_width, {0, 0});
+  LOG("width : %d,size : %ld", width, tmp.size());
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      tmp.at(j) = img.at<std::complex<double>>(i, j);
     }
-    for(int j = width;j < lim_width;j ++ ){
-      tmp.at(j) = std::complex<double>(0,0);
+    for (int j = width; j < lim_width; j++) {
+      tmp.at(j) = std::complex<double>(0, 0);
     }
-    _fft_core(tmp,is_fft);
-    for(int j = 0;j < lim_width;j ++) {
-      dft_img.at<std::complex<double> >(i,j) = tmp.at(j) / sqrt(lim_width);
+    _fft_core(tmp, is_fft);
+    for (int j = 0; j < lim_width; j++) {
+      dft_img.at<std::complex<double>>(i, j) = tmp.at(j) / sqrt(lim_width);
     }
   }
-  tmp.resize(lim_height,{0,0});
-  LOG("height : %d,size : %ld",height,tmp.size());
-  for(int j = 0;j < lim_width;j ++) {
-    for(int i = 0;i < lim_height;i ++) {
-      tmp.at(i) = dft_img.at<std::complex<double>>(i,j);
+  tmp.resize(lim_height, {0, 0});
+  LOG("height : %d,size : %ld", height, tmp.size());
+  for (int j = 0; j < lim_width; j++) {
+    for (int i = 0; i < lim_height; i++) {
+      tmp.at(i) = dft_img.at<std::complex<double>>(i, j);
     }
-    _fft_core(tmp,is_fft);
-    for(int i = 0;i < lim_height;i ++) {
-      dft_img.at<std::complex<double>>(i,j) = tmp.at(i) / sqrt(lim_height);
+    _fft_core(tmp, is_fft);
+    for (int i = 0; i < lim_height; i++) {
+      dft_img.at<std::complex<double>>(i, j) = tmp.at(i) / sqrt(lim_height);
     }
   }
 }
-void FFT2D(const IMG_Mat &img,IMG_Mat &dft_img) {
+void FFT2D(const IMG_Mat &img, IMG_Mat &dft_img) {
   IMG_Mat temp_img = ConvertSingleChannelMat2ComplexMat<uint8_t>(img);
   _fftShift(temp_img);
-  _fft2D(temp_img,dft_img,true);
+  _fft2D(temp_img, dft_img, true);
 }
-void IFFT2D(const IMG_Mat &img,IMG_Mat &dft_img) {
+void IFFT2D(const IMG_Mat &img, IMG_Mat &dft_img) {
   IMG_Mat temp_img;
-  _fft2D(img,temp_img,false);
+  _fft2D(img, temp_img, false);
   _fftShift(temp_img);
   int height = img.rows;
   int width = img.cols;
-  dft_img = IMG_Mat(img.size(),CV_8UC1);
-  for (int i = 0;i < height;i++){
-    for(int j = 0; j < width;j ++) {
-      int value = static_cast<int>(temp_img.at<std::complex<double> >(i,j).real());
-      if(value < 0) {
-         value = 0;
-      }else if(value > 255) {
+  dft_img = IMG_Mat(img.size(), CV_8UC1);
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      int value =
+          static_cast<int>(temp_img.at<std::complex<double>>(i, j).real());
+      if (value < 0) {
+        value = 0;
+      } else if (value > 255) {
         value = 255;
       }
-      dft_img.at<uint8_t>(i,j) = static_cast<uint8_t>(value);
+      dft_img.at<uint8_t>(i, j) = static_cast<uint8_t>(value);
     }
   }
 }
@@ -400,10 +407,9 @@ void DFT(const IMG_Mat &img, IMG_Mat &dft_img) {
   Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>
       eigen_img = ConvertMat2Eigen(temp_img);
   _fftShift(eigen_img);
-  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>
-      dft_mat;
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> dft_mat;
   _dft_core(eigen_img, dft_mat, [](double x, double u, double N) {
-        return std::exp(std::complex<double>(0, -2 * M_PI * x * u / N));
+    return std::exp(std::complex<double>(0, -2 * M_PI * x * u / N));
   });
   // 转换为IMG_Mat
   dft_img = ConvertEigen2Mat(dft_mat);
@@ -416,18 +422,16 @@ void IDFT(const IMG_Mat &dft_img, IMG_Mat &idft_img) {
   // 将图像转换为复数矩阵
   Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>
       eigen_img = ConvertMat2Eigen(dft_img);
-  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>
-      idft_mat;
+  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> idft_mat;
   _dft_core(eigen_img, idft_mat, [](double x, double u, double N) {
-        return std::exp(std::complex<double>(0, 2 * M_PI * x * u / N));
+    return std::exp(std::complex<double>(0, 2 * M_PI * x * u / N));
   });
   _fftShift(idft_mat);
   // 转换为IMG_Mat
   idft_img = IMG_Mat(height, width, CV_8UC1);
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      int value =
-          static_cast<int>(round(idft_mat(i, j).real()));
+      int value = static_cast<int>(round(idft_mat(i, j).real()));
       if (value < 0)
         value = 0;
       if (value > 255)
@@ -436,66 +440,68 @@ void IDFT(const IMG_Mat &dft_img, IMG_Mat &idft_img) {
     }
   }
 }
-IMG_Mat GrayCorrosion(const IMG_Mat &src,const IMG_Mat &struct_element){
+IMG_Mat GrayCorrosion(const IMG_Mat &src, const IMG_Mat &struct_element) {
   int height = src.rows;
   int width = src.cols;
   int struct_height = struct_element.rows;
   int struct_width = struct_element.cols;
-  IMG_Mat dst = IMG_Mat(height,width,CV_8UC1);
-  for (int i = 0;i < height;i++){
-    for(int j = 0;j < width;j ++) {
+  IMG_Mat dst = IMG_Mat(height, width, CV_8UC1);
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
       int sum = 1e9;
-      for(int m = 0;m < struct_height;m ++) {
-        for(int n = 0;n < struct_width;n ++) {
-          if(i + m > height || j + n > width) {
+      for (int m = 0; m < struct_height; m++) {
+        for (int n = 0; n < struct_width; n++) {
+          if (i + m > height || j + n > width) {
             continue;
           }
-          sum = std::min(sum,
-          static_cast<int>(src.at<uint8_t>(i + m,j + n)) - static_cast<int>(struct_element.at<uint8_t>(m,n)));
+          sum = std::min(
+              sum, static_cast<int>(src.at<uint8_t>(i + m, j + n)) -
+                       static_cast<int>(struct_element.at<uint8_t>(m, n)));
         }
       }
-      if(sum < 0) {
+      if (sum < 0) {
         sum = 0;
-      }else if(sum > 255) {
+      } else if (sum > 255) {
         sum = 255;
       }
-      dst.at<uint8_t>(i,j) = static_cast<uint8_t>(sum);
+      dst.at<uint8_t>(i, j) = static_cast<uint8_t>(sum);
     }
   }
   return dst;
 }
-IMG_Mat GrayExpansion(const IMG_Mat &src,const IMG_Mat &struct_element){
+IMG_Mat GrayExpansion(const IMG_Mat &src, const IMG_Mat &struct_element) {
   int height = src.rows;
   int width = src.cols;
   int struct_height = struct_element.rows;
   int struct_width = struct_element.cols;
-  IMG_Mat dst = IMG_Mat(height,width,CV_8UC1);
-  for (int i = 0;i < height;i++){
-    for(int j = 0;j < width;j ++) {
+  IMG_Mat dst = IMG_Mat(height, width, CV_8UC1);
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
       int sum = -1e9;
-      for(int m = 0;m < struct_height;m ++) {
-        for(int n = 0;n < struct_width;n ++) {
-          if(i-m < 0 || j-n < 0) {
+      for (int m = 0; m < struct_height; m++) {
+        for (int n = 0; n < struct_width; n++) {
+          if (i - m < 0 || j - n < 0) {
             continue;
           }
-          sum = std::max(sum,
-          static_cast<int>(src.at<uint8_t>(i - m,j - n)) + static_cast<int>(struct_element.at<uint8_t>(m,n)));
+          sum = std::max(
+              sum, static_cast<int>(src.at<uint8_t>(i - m, j - n)) +
+                       static_cast<int>(struct_element.at<uint8_t>(m, n)));
         }
       }
-      if(sum < 0) {
+      if (sum < 0) {
         sum = 0;
-      }else if(sum > 255) {
+      } else if (sum > 255) {
         sum = 255;
       }
-      dst.at<uint8_t>(i,j) = static_cast<uint8_t>(sum);
+      dst.at<uint8_t>(i, j) = static_cast<uint8_t>(sum);
     }
   }
   return dst;
 }
-IMG_Mat GrayOpening(const IMG_Mat &src,const IMG_Mat &struct_element){
-  return GrayExpansion(GrayCorrosion(src,struct_element),struct_element);
+IMG_Mat GrayOpening(const IMG_Mat &src, const IMG_Mat &struct_element) {
+  return GrayExpansion(GrayCorrosion(src, struct_element), struct_element);
 }
-IMG_Mat GrayClosing(const IMG_Mat &src,const IMG_Mat &struct_element){
-  return GrayCorrosion(GrayExpansion(src,struct_element),struct_element);
+IMG_Mat GrayClosing(const IMG_Mat &src, const IMG_Mat &struct_element) {
+  return GrayCorrosion(GrayExpansion(src, struct_element), struct_element);
 }
 } // namespace MY_IMG
