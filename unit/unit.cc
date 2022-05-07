@@ -158,6 +158,7 @@ void filter2d_(const IMG_Mat &input_img, IMG_Mat &output_img,
   }
   // 将结果拷贝到输出图像
   tmp_buffer.copyTo(output_img);
+  tmp_buffer.release();
 }
 
 void ImgFilter(const IMG_Mat &img, const IMG_Mat &filter, IMG_Mat &dimg,
@@ -197,6 +198,9 @@ void ImgFilter(const IMG_Mat &img, const IMG_Mat &filter, IMG_Mat &dimg,
 
   // 合并通道
   cv::merge(temp_img, type_size, dimg);
+  for (int i = 0; i < type_size; i++) {
+    temp_img[i].release();
+  }
 }
 IMG_Mat ConvertComplexMat2doubleMat(const IMG_Mat &img) {
   int height = img.rows;
@@ -374,11 +378,13 @@ void _fft2D(const IMG_Mat &img, IMG_Mat &dft_img, const bool &is_fft) {
       dft_img.at<std::complex<double>>(i, j) = tmp.at(i) / sqrt(lim_height);
     }
   }
+  tmp.clear();
 }
 void FFT2D(const IMG_Mat &img, IMG_Mat &dft_img) {
   IMG_Mat temp_img = ConvertSingleChannelMat2ComplexMat<uint8_t>(img);
   _fftShift(temp_img);
   _fft2D(temp_img, dft_img, true);
+  temp_img.release();
 }
 void IFFT2D(const IMG_Mat &img, IMG_Mat &dft_img) {
   IMG_Mat temp_img;
@@ -399,6 +405,7 @@ void IFFT2D(const IMG_Mat &img, IMG_Mat &dft_img) {
       dft_img.at<uint8_t>(i, j) = static_cast<uint8_t>(value);
     }
   }
+  temp_img.release();
 }
 void DFT(const IMG_Mat &img, IMG_Mat &dft_img) {
   // 将图像转换为复数矩阵
@@ -414,6 +421,7 @@ void DFT(const IMG_Mat &img, IMG_Mat &dft_img) {
   // 转换为IMG_Mat
   dft_img = ConvertEigen2Mat(dft_mat);
   // LOG("dft_img size: (%d,%d)", dft_img.rows, dft_img.cols);
+  temp_img.release();
 }
 
 void IDFT(const IMG_Mat &dft_img, IMG_Mat &idft_img) {

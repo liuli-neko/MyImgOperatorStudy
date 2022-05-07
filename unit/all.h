@@ -17,6 +17,7 @@
 #include <opencv2/opencv.hpp>
 
 using IMG_Mat = cv::Mat;
+using Point2d = cv::Point2d;
 #endif
 // LOG
 #define LOG(format, ...)                                                       \

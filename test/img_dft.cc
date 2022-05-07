@@ -56,14 +56,14 @@ int main(int argc, char **argv) {
 
   // 创建高斯滤波器
   auto gauss_filter =
-      GaussianFilter({fft_img.rows / 2, fft_img.cols / 2}, 50);
+      GaussianFilter({fft_img.rows / 2, fft_img.cols / 2}, 200);
   cv::Mat gauss_img_low(fft_img.size(), fft_img.type());
   // 进行滤波
   for (int i = 0; i < fft_img.rows; i++) {
     for (int j = 0; j < fft_img.cols; j++) {
       gauss_img_low.at<std::complex<double>>(i, j) =
           fft_img.at<std::complex<double>>(i, j) *
-          gauss_filter.HighPassFilter(i, j);
+          gauss_filter.LowPassFilter(i, j);
     }
   }
 
