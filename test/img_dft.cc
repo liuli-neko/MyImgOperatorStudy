@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 
   // 创建高斯滤波器
   auto gauss_filter =
-      GaussianFilter({fft_img.rows / 2, fft_img.cols / 2}, 200);
+      GaussianFilter({fft_img.rows / 2, fft_img.cols / 2}, 100);
   cv::Mat gauss_img_low(fft_img.size(), fft_img.type());
   // 进行滤波
   for (int i = 0; i < fft_img.rows; i++) {

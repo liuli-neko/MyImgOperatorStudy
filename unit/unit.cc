@@ -354,7 +354,7 @@ void _fft2D(const IMG_Mat &img, IMG_Mat &dft_img, const bool &is_fft) {
   dft_img = IMG_Mat(lim_height, lim_width, CV_64FC2);
   std::vector<std::complex<double>> tmp;
   tmp.resize(lim_width, {0, 0});
-  LOG("width : %d,size : %ld", width, tmp.size());
+  // LOG("width : %d,size : %ld", width, tmp.size());
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
       tmp.at(j) = img.at<std::complex<double>>(i, j);
@@ -368,7 +368,7 @@ void _fft2D(const IMG_Mat &img, IMG_Mat &dft_img, const bool &is_fft) {
     }
   }
   tmp.resize(lim_height, {0, 0});
-  LOG("height : %d,size : %ld", height, tmp.size());
+  // LOG("height : %d,size : %ld", height, tmp.size());
   for (int j = 0; j < lim_width; j++) {
     for (int i = 0; i < lim_height; i++) {
       tmp.at(i) = dft_img.at<std::complex<double>>(i, j);

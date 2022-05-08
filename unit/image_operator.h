@@ -9,8 +9,8 @@ namespace MY_IMG {
  * @param img_out 输出的图像集
  * @param sigma 频率域滤波半径集
  */
-void ImageGaussianFilter(IMG_Mat &img, std::vector<IMG_Mat> &img_out,const std::vector<double> &sigma);
-void ImageChange(IMG_Mat &img, IMG_Mat &img_out,const double &zoom = 2,const double &angle = 0);
+void ImageGaussianFilter(const IMG_Mat &img, std::vector<IMG_Mat> &img_out,const std::vector<double> &sigma);
+void ImageChange(const IMG_Mat &img, IMG_Mat &img_out,const double &zoom = 2,const double &angle = 0);
 } // namespace MY_IMG
 
 #endif

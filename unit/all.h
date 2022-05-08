@@ -22,3 +22,10 @@ using Point2d = cv::Point2d;
 // LOG
 #define LOG(format, ...)                                                       \
   printf("[%s:%d] " format "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+
+#define ASSERT(booleam, format, ...)                                           \
+  if (!booleam) {                                                              \
+    LOG(format, ##__VA_ARGS__);                                                \
+    exit(1);                                                                   \
+  }                                                                            \
+  void(0)

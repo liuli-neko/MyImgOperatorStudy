@@ -21,7 +21,7 @@ int main(int argc, char const *argv[])
     angle = std::stod(argv[4]);
   }
   cv::Mat src;
-  MY_IMG::Rgb2Gray(cv::imread(img_path), src,{1/3.0,1/3.0,1/3.0});
+  MY_IMG::Rgb2Gray(cv::imread(img_path), src, {1/3.0, 1/3.0, 1/3.0});
   cv::Mat dst;
   MY_IMG::ImageChange(src, dst, zoom, angle);
   LOG("zoom:%f,angle:%f",zoom,angle);

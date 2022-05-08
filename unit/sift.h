@@ -7,7 +7,6 @@
 namespace MY_IMG {
 // 用与保存图像金字塔的结构体
 struct Octave {
-  int layer_num = 0;
   std::vector<IMG_Mat> layers;
   std::vector<IMG_Mat> dog_layers;
   void release() {
@@ -39,16 +38,16 @@ struct SiftParam {
   int octave_layer_num = 5;
   double octave_layer_min_sigma = 5;
   double octave_layer_max_sigma = 200;
-  double octave_layer_sigma = 1.6;
-  double octave_layer_sigma_k = sqrt(2);
+  double octave_layer_sigma_k = 1.0/5;
   double octave_layer_sigma_step = 0;
+  double octave_k = 2.0; 
 };
 /** @brief 特征提取和描述子生成
  * @param img 图像数据
  * @param param sift参数
  * @param descriptors 提取出的关键点与其描述子
 */
-void SIFT(Image &img, SiftParam param,std::vector<SiftPointDescriptor> &descriptors);
+void SIFT(Image &img,std::vector<SiftPointDescriptor> &descriptors);
 
 } // namespace MY_IMG
 
