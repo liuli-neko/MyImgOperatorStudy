@@ -56,7 +56,7 @@ void HistogramEqualization(const IMG_Mat &input_img, IMG_Mat &output_img) {
 }
 
 double gaussFunction(const double sigma, const double x, const double n) {
-  return 1.0 / pow(2 * PI, n) * exp(-x / (2 * sigma * sigma));
+  return 1.0 / pow(2 * PI * sigma * sigma, n) * exp(-x / (2 * sigma * sigma));
 }
 
 void CreateGaussBlurFilter(IMG_Mat &filter, const double &sigma, int radim) {
@@ -66,10 +66,10 @@ void CreateGaussBlurFilter(IMG_Mat &filter, const double &sigma, int radim) {
     while (gaussFunction(sigma, i * i, 0.5) > 0.01 * val) {
       i++;
     }
-    radim = i * 2;
+    radim = i * 2 + 1;
   }
 
-  filter = IMG_Mat(radim + 1, 1, CV_64F);
+  filter = IMG_Mat(radim, 1, CV_64F);
 
   for (int i = 0; i <= radim / 2; i++) {
     filter.at<double>(i + radim / 2) = filter.at<double>(radim / 2 - i) =
@@ -112,7 +112,65 @@ void CreateGaussBlurFilter(IMG_Mat &filter, const double &sigma, int radim_h,
   }
   filter /= sum;
 }
-
+void filter2d_split(const IMG_Mat &img, IMG_Mat &blur_img, const IMG_Mat &blur_filter) {
+  blur_img = img.clone();
+  int height = img.rows;
+  int width = img.cols;
+  for (int i = 0; i < height; i++) {
+    std::vector<cv::Vec3d> tmp;
+    tmp.clear();
+    for (int j = 0; j < width; j++) {
+      cv::Vec3d val = {0, 0, 0};  
+      for (int k = 0; k < blur_filter.rows; k++) {
+        int x = j + k - blur_filter.rows / 2;
+        if (x < 0) {
+          x = -x;
+        }
+        if (x >= width) {
+          x = 2 * width - x - 1;
+        }
+        auto pixe = blur_img.at<cv::Vec3b>(i, x);
+        val[0] += pixe[0] * blur_filter.at<double>(k);
+        val[1] += pixe[1] * blur_filter.at<double>(k);
+        val[2] += pixe[2] * blur_filter.at<double>(k);
+      }
+      tmp.push_back(val);
+    }
+    for (int j = 0; j < width; j++) {
+      cv::Vec3b pixe(static_cast<uint8_t>(tmp[j][0]),
+                     static_cast<uint8_t>(tmp[j][1]),
+                     static_cast<uint8_t>(tmp[j][2]));
+      blur_img.at<cv::Vec3b>(i, j) = pixe;
+    }
+  }
+  for (int i = 0; i < width; i++) {
+    std::vector<cv::Vec3d> tmp;
+    tmp.clear();
+    for (int j = 0; j < height; j++) {
+      cv::Vec3d val = {0, 0, 0};  
+      for (int k = 0; k < blur_filter.rows; k++) {
+        int x = j + k - blur_filter.rows / 2;
+        if (x < 0) {
+          x = -x;
+        }
+        if (x >= height) {
+          x = 2 * height - x - 1;
+        }
+        auto pixe = blur_img.at<cv::Vec3b>(x, i);
+        val[0] += pixe[0] * blur_filter.at<double>(k);
+        val[1] += pixe[1] * blur_filter.at<double>(k);
+        val[2] += pixe[2] * blur_filter.at<double>(k);
+      }
+      tmp.push_back(val);
+    }
+    for (int j = 0; j < height; j++) {
+      cv::Vec3b pixe(static_cast<uint8_t>(tmp[j][0]),
+                     static_cast<uint8_t>(tmp[j][1]),
+                     static_cast<uint8_t>(tmp[j][2]));
+      blur_img.at<cv::Vec3b>(j, i) = pixe;
+    }
+  }
+}
 void filter2d_(const IMG_Mat &input_img, IMG_Mat &output_img,
                const IMG_Mat &filter) {
   int height = input_img.rows;
@@ -160,7 +218,11 @@ void filter2d_(const IMG_Mat &input_img, IMG_Mat &output_img,
   tmp_buffer.copyTo(output_img);
   tmp_buffer.release();
 }
-
+void GaussBlur(const IMG_Mat &src, IMG_Mat &dst, const double &sigma,const double &radim) {
+  IMG_Mat filter;
+  CreateGaussBlurFilter(filter, sigma, radim);
+  filter2d_split(src, dst, filter);
+}
 void ImgFilter(const IMG_Mat &img, const IMG_Mat &filter, IMG_Mat &dimg,
                const bool &is_resverse) {
   int width = img.cols;

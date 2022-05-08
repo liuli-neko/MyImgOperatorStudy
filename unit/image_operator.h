@@ -11,6 +11,7 @@ namespace MY_IMG {
  */
 void ImageGaussianFilter(const IMG_Mat &img, std::vector<IMG_Mat> &img_out,const std::vector<double> &sigma);
 void ImageChange(const IMG_Mat &img, IMG_Mat &img_out,const double &zoom = 2,const double &angle = 0);
+void DrawPoints(const IMG_Mat &img, const std::vector<Point2d> &keypoints, IMG_Mat &img_out);
 } // namespace MY_IMG
 
 #endif

@@ -91,6 +91,15 @@ void CreateGaussBlurFilter(IMG_Mat &filter, const double &sigma,
 void CreateGaussBlurFilter(IMG_Mat &filter, const double &sigma, int radim_h,
                            int radim_w);
 /**
+ * @brief 对图像进行高斯滤波（分离）
+ * @param src 原图像
+ * @param dst 滤波后的图像
+ * @param sigma 标准差
+ * @param radim 滤波核半径(-1时将自动计算,基于经验上的最大影响范围)
+ * @note 基于高斯滤波的特殊性的样子，应该不能通用
+*/
+void GaussBlur(const IMG_Mat &src, IMG_Mat &dst, const double &sigma,const double &radim = -1);
+/**
  * @brief 对图像进行卷积
  * @param src 原图像
  * @param dst 卷积后的图像

@@ -36,11 +36,12 @@ struct SiftPointDescriptor
 struct SiftParam {
   int octave_num = 4;
   int octave_layer_num = 5;
-  double octave_layer_min_sigma = 5;
-  double octave_layer_max_sigma = 200;
+  double octave_layer_min_sigma = 1.6;
+  double octave_layer_max_sigma = 20;
   double octave_layer_sigma_k = 1.0/5;
   double octave_layer_sigma_step = 0;
-  double octave_k = 2.0; 
+  double octave_k = 2.0;
+  double Hessian_r = 10;
 };
 /** @brief 特征提取和描述子生成
  * @param img 图像数据
