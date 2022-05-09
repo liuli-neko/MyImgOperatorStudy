@@ -36,17 +36,17 @@ namespace MY_IMG {
 
 // eps = 1e-6
 const double eps = 1e-6;
-struct Point2d {
+struct Point {
   int x;
   int y;
-  Point2d(int x = 0,int y = 0) : x(x), y(y) {}
-  bool operator < (const Point2d &p) const {
+  Point(int x = 0,int y = 0) : x(x), y(y) {}
+  bool operator < (const Point &p) const {
     if(x == p.x) {
       return y < p.y;
     }
     return x < p.x;
   }
-  bool operator == (const Point2d &p) const {
+  bool operator == (const Point &p) const {
     return x == p.x && y == p.y;
   }
 };

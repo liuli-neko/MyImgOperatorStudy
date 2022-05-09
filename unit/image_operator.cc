@@ -130,7 +130,7 @@ void ImageChange(const IMG_Mat &src, IMG_Mat &dst, const double &zoom,
   }
 }
 
-void DrawPoints(const IMG_Mat &img, const std::vector<Point2d> &keypoints, IMG_Mat &img_out) {
+void DrawPoints(const IMG_Mat &img, const std::vector<Point> &keypoints, IMG_Mat &img_out) {
   img_out = img.clone();
   for (const auto &p : keypoints) {
     cv::circle(img_out, cv::Point(p.x, p.y), 3, cv::Scalar(0, 0, 255), 1);

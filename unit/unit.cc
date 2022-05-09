@@ -112,15 +112,17 @@ void CreateGaussBlurFilter(IMG_Mat &filter, const double &sigma, int radim_h,
   }
   filter /= sum;
 }
-void filter2d_split(const IMG_Mat &img, IMG_Mat &blur_img, const IMG_Mat &blur_filter) {
+template <typename PixeType>
+void filter2d_split(const IMG_Mat &img, IMG_Mat &blur_img,
+                    const IMG_Mat &blur_filter) {
   blur_img = img.clone();
   int height = img.rows;
   int width = img.cols;
   for (int i = 0; i < height; i++) {
-    std::vector<cv::Vec3d> tmp;
+    std::vector<double> tmp;
     tmp.clear();
     for (int j = 0; j < width; j++) {
-      cv::Vec3d val = {0, 0, 0};  
+      double val = 0.0;
       for (int k = 0; k < blur_filter.rows; k++) {
         int x = j + k - blur_filter.rows / 2;
         if (x < 0) {
@@ -129,25 +131,19 @@ void filter2d_split(const IMG_Mat &img, IMG_Mat &blur_img, const IMG_Mat &blur_f
         if (x >= width) {
           x = 2 * width - x - 1;
         }
-        auto pixe = blur_img.at<cv::Vec3b>(i, x);
-        val[0] += pixe[0] * blur_filter.at<double>(k);
-        val[1] += pixe[1] * blur_filter.at<double>(k);
-        val[2] += pixe[2] * blur_filter.at<double>(k);
+        val += blur_img.at<PixeType>(i, x) * blur_filter.at<double>(k);
       }
       tmp.push_back(val);
     }
     for (int j = 0; j < width; j++) {
-      cv::Vec3b pixe(static_cast<uint8_t>(tmp[j][0]),
-                     static_cast<uint8_t>(tmp[j][1]),
-                     static_cast<uint8_t>(tmp[j][2]));
-      blur_img.at<cv::Vec3b>(i, j) = pixe;
+      blur_img.at<PixeType>(i, j) = static_cast<PixeType>(tmp[j]);
     }
   }
   for (int i = 0; i < width; i++) {
-    std::vector<cv::Vec3d> tmp;
+    std::vector<double> tmp;
     tmp.clear();
     for (int j = 0; j < height; j++) {
-      cv::Vec3d val = {0, 0, 0};  
+      double val = 0.0;
       for (int k = 0; k < blur_filter.rows; k++) {
         int x = j + k - blur_filter.rows / 2;
         if (x < 0) {
@@ -156,18 +152,12 @@ void filter2d_split(const IMG_Mat &img, IMG_Mat &blur_img, const IMG_Mat &blur_f
         if (x >= height) {
           x = 2 * height - x - 1;
         }
-        auto pixe = blur_img.at<cv::Vec3b>(x, i);
-        val[0] += pixe[0] * blur_filter.at<double>(k);
-        val[1] += pixe[1] * blur_filter.at<double>(k);
-        val[2] += pixe[2] * blur_filter.at<double>(k);
+        val += blur_img.at<PixeType>(x, i) * blur_filter.at<double>(k);
       }
       tmp.push_back(val);
     }
     for (int j = 0; j < height; j++) {
-      cv::Vec3b pixe(static_cast<uint8_t>(tmp[j][0]),
-                     static_cast<uint8_t>(tmp[j][1]),
-                     static_cast<uint8_t>(tmp[j][2]));
-      blur_img.at<cv::Vec3b>(j, i) = pixe;
+      blur_img.at<PixeType>(j, i) = static_cast<PixeType>(tmp[j]);
     }
   }
 }
@@ -218,10 +208,45 @@ void filter2d_(const IMG_Mat &input_img, IMG_Mat &output_img,
   tmp_buffer.copyTo(output_img);
   tmp_buffer.release();
 }
-void GaussBlur(const IMG_Mat &src, IMG_Mat &dst, const double &sigma,const double &radim) {
+void GaussBlur(const IMG_Mat &src, IMG_Mat &dst, const double &sigma,
+               const double &radim) {
   IMG_Mat filter;
   CreateGaussBlurFilter(filter, sigma, radim);
-  filter2d_split(src, dst, filter);
+  if (src.channels() == 1) {
+    if (src.type() == CV_32F) {
+      filter2d_split<float>(src, dst, filter);
+    } else if (src.type() == CV_64F) {
+      filter2d_split<double>(src, dst, filter);
+    } else if (src.type() == CV_8U) {
+      filter2d_split<uint8_t>(src, dst, filter);
+    } else if (src.type() == CV_16U) {
+      filter2d_split<uint16_t>(src, dst, filter);
+    } else if (src.type() == CV_32S) {
+      filter2d_split<int32_t>(src, dst, filter);
+    } else {
+      ASSERT(false, "GaussBlur: unsupported type");
+    }
+  } else {
+    IMG_Mat tmp_buffer[src.channels()];
+    cv::split(src, tmp_buffer);
+    for (int i = 0; i < src.channels(); i++) {
+      if (src.type() == CV_32FC3) {
+        filter2d_split<float>(tmp_buffer[i], tmp_buffer[i], filter);
+      } else if (src.type() == CV_64FC3) {
+        filter2d_split<double>(tmp_buffer[i], tmp_buffer[i], filter);
+      } else if (src.type() == CV_8UC3) {
+        filter2d_split<uint8_t>(tmp_buffer[i], tmp_buffer[i], filter);
+      } else if (src.type() == CV_16UC3) {
+        filter2d_split<uint16_t>(tmp_buffer[i], tmp_buffer[i], filter);
+      } else {
+        ASSERT(false, "GaussBlur: unsupported type");
+      }
+    }
+    cv::merge(tmp_buffer, src.channels(), dst);
+    for (int i = 0; i < src.channels(); i++) {
+      tmp_buffer[i].release();
+    }
+  }
 }
 void ImgFilter(const IMG_Mat &img, const IMG_Mat &filter, IMG_Mat &dimg,
                const bool &is_resverse) {
@@ -275,33 +300,7 @@ IMG_Mat ConvertComplexMat2doubleMat(const IMG_Mat &img) {
   }
   return result;
 }
-IMG_Mat ConvertDoubleMat2Uint8Mat(const IMG_Mat &img, const bool &is_mapping) {
-  int height = img.rows;
-  int width = img.cols;
-  IMG_Mat result = IMG_Mat(height, width, CV_8UC1);
-  // 获取图像中最大值和最小值
-  double min_value = 0;
-  double max_value = 0;
-  cv::minMaxLoc(img, &min_value, &max_value);
-  // 对每个像素进行转换
-  for (int i = 0; i < height; i++) {
-    for (int j = 0; j < width; j++) {
-      if (is_mapping) {
-        result.at<uint8_t>(i, j) = static_cast<uint8_t>(
-            255 * (img.at<double>(i, j) - min_value) / (max_value - min_value));
-      } else {
-        if (img.at<double>(i, j) < 0) {
-          result.at<uint8_t>(i, j) = 0;
-        } else if (img.at<double>(i, j) > 255) {
-          result.at<uint8_t>(i, j) = 255;
-        } else {
-          result.at<uint8_t>(i, j) = static_cast<uint8_t>(img.at<double>(i, j));
-        }
-      }
-    }
-  }
-  return result;
-}
+
 Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>
 ConvertMat2Eigen(const IMG_Mat &img) {
   int height = img.rows;
@@ -443,7 +442,18 @@ void _fft2D(const IMG_Mat &img, IMG_Mat &dft_img, const bool &is_fft) {
   tmp.clear();
 }
 void FFT2D(const IMG_Mat &img, IMG_Mat &dft_img) {
-  IMG_Mat temp_img = ConvertSingleChannelMat2ComplexMat<uint8_t>(img);
+  IMG_Mat temp_img;
+  if (temp_img.type() == CV_8U) {
+    temp_img = ConvertSingleChannelMat2ComplexMat<uint8_t>(img);
+  } else if (temp_img.type() == CV_8S) {
+    temp_img = ConvertSingleChannelMat2ComplexMat<int8_t>(img);
+  } else if (temp_img.type() == CV_32F) {
+    temp_img = ConvertSingleChannelMat2ComplexMat<float>(img);
+  } else if (temp_img.type() == CV_64F) {
+    temp_img = ConvertSingleChannelMat2ComplexMat<double>(img);
+  } else {
+    ASSERT(false,"Unsupported type");
+  }
   _fftShift(temp_img);
   _fft2D(temp_img, dft_img, true);
   temp_img.release();
@@ -454,17 +464,12 @@ void IFFT2D(const IMG_Mat &img, IMG_Mat &dft_img) {
   _fftShift(temp_img);
   int height = img.rows;
   int width = img.cols;
-  dft_img = IMG_Mat(img.size(), CV_8UC1);
+  dft_img = IMG_Mat(img.size(), CV_32F);
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      int value =
-          static_cast<int>(temp_img.at<std::complex<double>>(i, j).real());
-      if (value < 0) {
-        value = 0;
-      } else if (value > 255) {
-        value = 255;
-      }
-      dft_img.at<uint8_t>(i, j) = static_cast<uint8_t>(value);
+      float value =
+          static_cast<float>(temp_img.at<std::complex<double>>(i, j).real());
+      dft_img.at<float>(i, j) = static_cast<float>(value);
     }
   }
   temp_img.release();

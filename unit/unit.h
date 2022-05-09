@@ -113,7 +113,8 @@ void ImgFilter(const IMG_Mat &img, const IMG_Mat &filter, IMG_Mat &dst,
 IMG_Mat ConvertComplexMat2doubleMat(const IMG_Mat &img);
 template <typename T>
 IMG_Mat ConvertSingleChannelMat2ComplexMat(const IMG_Mat &img);
-IMG_Mat ConvertDoubleMat2Uint8Mat(const IMG_Mat &img,
+template <typename PixeType>
+IMG_Mat ConvertSingleChannelMat2Uint8Mat(const IMG_Mat &img,
                                   const bool &is_mapping = false);
 
 // 定义傅里叶变换的函数声明
@@ -138,6 +139,34 @@ IMG_Mat MY_IMG::ConvertSingleChannelMat2ComplexMat(const IMG_Mat &img) {
     for (int j = 0; j < width; j++) {
       result.at<std::complex<double>>(i, j) =
           std::complex<double>(static_cast<double>(img.at<T>(i, j)), 0);
+    }
+  }
+  return result;
+}
+template <typename PixeType>
+IMG_Mat MY_IMG::ConvertSingleChannelMat2Uint8Mat(const IMG_Mat &img, const bool &is_mapping) {
+  int height = img.rows;
+  int width = img.cols;
+  IMG_Mat result = IMG_Mat(height, width, CV_8UC1);
+  // 获取图像中最大值和最小值
+  double min_value = 0;
+  double max_value = 0;
+  cv::minMaxLoc(img, &min_value, &max_value);
+  // 对每个像素进行转换
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      if (is_mapping) {
+        result.at<uint8_t>(i, j) = static_cast<uint8_t>(
+            255 * (img.at<PixeType>(i, j) - min_value) / (max_value - min_value));
+      } else {
+        if (img.at<PixeType>(i, j) < 0) {
+          result.at<uint8_t>(i, j) = 0;
+        } else if (img.at<PixeType>(i, j) > 255) {
+          result.at<uint8_t>(i, j) = 255;
+        } else {
+          result.at<uint8_t>(i, j) = static_cast<uint8_t>(img.at<PixeType>(i, j));
+        }
+      }
     }
   }
   return result;

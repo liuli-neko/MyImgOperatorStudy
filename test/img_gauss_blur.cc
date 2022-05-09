@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
 
   std::string file_name = "./test_img.png";
   std::string output_name = "./test_img_out.png";
-  double sigma = 2.0;
+  double sigma = 10.0;
   if (argc >= 2) {
     file_name = std::string(argv[1]);
     if (argc >= 3) {
