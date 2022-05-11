@@ -3,40 +3,15 @@
 
 #include "image_operator.h"
 #include "all.h"
+#define USE_CONVOLUTION
 
 namespace MY_IMG {
-// 用与保存图像金字塔的结构体
-struct Octave {
-  std::vector<IMG_Mat> layers;
-  std::vector<IMG_Mat> dog_layers;
-  void release() {
-    for (int i = 0; i < layers.size(); ++i) {
-      layers[i].release();
-    }
-    for (int i = 0; i < dog_layers.size(); ++i) {
-      dog_layers[i].release();
-    }
-  }
-};
-// 定义用于存储sift描述子的结构体
-struct SiftPointDescriptor
-{
-  Point keypoint;
-  double descriptor[128];
-};
-// 定义用于保存原始图片的结构体
-struct Image {
-  IMG_Mat img;
-  int imgId;
-  std::vector<Octave> Octaves; // octave*layer
-  std::vector<SiftPointDescriptor> keypoints;
-};
 
 // 定义sift的参数结构体
 struct SiftParam {
   int max_features = 0; // 最大特征点数量,0表示不限制
   int num_octave_layers = 5; // 图像金字塔内每一层的层数
-  double constrast_threshold = 0.04; // 对比度阈值(D(x))
+  double contrast_threshold = 0.04; // 对比度阈值(D(x))
   double edge_threshold = 10; // 边缘阈值(E(x))
   double sigma = 1.6; // 卷积核的标准差
   bool keep_appearance = true; // 是否保留原始图像
@@ -46,7 +21,7 @@ struct SiftParam {
   float contr_threshold = 0.04; // 关键点的阈值
   float curv_threshold = 10.0; // 关键点的阈值
   float init_sigma = 0.5; // 初始sigma
-  int img_barder = 2; // 图像边界忽略宽度
+  int img_border = 2; // 图像边界忽略宽度
   int max_interp_steps = 5; // 关键点精确插值字数
   int ori_hist_bins = 36; // 关键点方向直方图bin数
   float ori_sig_fctr = 1.5; // 关键点主方向直方图的sigma参数

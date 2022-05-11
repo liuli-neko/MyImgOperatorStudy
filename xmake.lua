@@ -4,22 +4,23 @@ add_requires("libpng")
 add_requires("libwebp")
 add_rules("mode.debug","mode.release")
 
+add_cxxflags("-fexec-charset=GBK")
 add_includedirs("D:\\APP\\eigen-3.4.0")
 
 target("main")
-    add_includedirs("img_io/")
+    add_includedirs("unit/")
     add_packages("opencv")
     add_packages("libjpeg")
     add_packages("libpng")
     add_packages("libwebp")
-    add_files("img_io/*.cc")
+    add_files("unit/*.cc")
     add_files("*.cc")
     if is_mode("debug") then 
         add_defines("DEBUG")
     end
 
 target("mat_test")
-    add_includedirs("img_io/")
+    add_includedirs("unit/")
     add_packages("opencv")
     add_files("test/mat_test.cc")
     if is_mode("debug") then 
@@ -33,47 +34,47 @@ target("path_test")
     end
 
 target("img_gauss_blur")
-    add_includedirs("img_io/")
+    add_includedirs("unit/")
     add_packages("opencv")
     add_packages("libjpeg")
     add_packages("libpng")
     add_packages("libwebp")
-    add_files("img_io/*.cc")
+    add_files("unit/*.cc")
     add_files("test/img_gauss_blur.cc")
     if is_mode("debug") then 
         add_defines("DEBUG")
     end
 
 target("img_histogram_equalization")
-    add_includedirs("img_io/")
+    add_includedirs("unit/")
     add_packages("opencv")
     add_packages("libjpeg")
     add_packages("libpng")
     add_packages("libwebp")
-    add_files("img_io/*.cc")
+    add_files("unit/*.cc")
     add_files("test/img_histogram_equalization.cc")
     if is_mode("debug") then 
         add_defines("DEBUG")
     end
 target("img_dft")
-    add_includedirs("img_io/")
+    add_includedirs("unit/")
     add_packages("opencv")
     add_packages("libjpeg")
     add_packages("libpng")
     add_packages("libwebp")
-    add_files("img_io/*.cc")
+    add_files("unit/*.cc")
     add_files("test/img_dft.cc")
     if is_mode("debug") then 
         add_defines("DEBUG")
     end
 
 target("img_filter")
-    add_includedirs("img_io/")
+    add_includedirs("unit/")
     add_packages("opencv")
     add_packages("libjpeg")
     add_packages("libpng")
     add_packages("libwebp")
-    add_files("img_io/*.cc")
+    add_files("unit/*.cc")
     add_files("test/img_filter.cc")
     if is_mode("debug") then 
         add_defines("DEBUG")
@@ -86,25 +87,37 @@ target("math_test")
     end
 
 target("main")
-    add_includedirs("img_io/")
+    add_includedirs("unit/")
     add_packages("opencv")
     add_packages("libjpeg")
     add_packages("libpng")
     add_packages("libwebp")
-    add_files("img_io/*.cc")
+    add_files("unit/*.cc")
     add_files("*.cc")
     if is_mode("debug") then 
         add_defines("DEBUG")
     end
 
 target("img_morphology")
-    add_includedirs("img_io/")
+    add_includedirs("unit/")
     add_packages("opencv")
     add_packages("libjpeg")
     add_packages("libpng")
     add_packages("libwebp")
-    add_files("img_io/*.cc")
+    add_files("unit/*.cc")
     add_files("test/img_morphology.cc")
+    if is_mode("debug") then 
+        add_defines("DEBUG")
+    end
+
+target("img_sift")
+    add_includedirs("unit/")
+     add_packages("opencv")
+    add_packages("libjpeg")
+    add_packages("libpng")
+    add_packages("libwebp")
+    add_files("unit/*.cc")
+    add_files("test/img_sift.cc")
     if is_mode("debug") then 
         add_defines("DEBUG")
     end

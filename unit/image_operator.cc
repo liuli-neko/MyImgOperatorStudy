@@ -2,9 +2,7 @@
 #include "unit.h"
 
 namespace MY_IMG {
-double _S(double sigma){
-  return 0.001*exp(-2*sigma + 15);
-}
+double _S(double sigma) { return 0.001 * exp(-2 * sigma + 15); }
 void ImageGaussianFilter(const IMG_Mat &img, std::vector<IMG_Mat> &img_out,
                          const std::vector<double> &sigma) {
   int channel = img.channels();
@@ -14,7 +12,7 @@ void ImageGaussianFilter(const IMG_Mat &img, std::vector<IMG_Mat> &img_out,
   } else {
     img_tmp = img.clone();
   }
-  
+
   IMG_Mat img_fft;
   FFT2D(img_tmp, img_fft);
   IMG_Mat img_tmp_out = IMG_Mat::zeros(img_fft.size(), img_fft.type());
@@ -24,7 +22,7 @@ void ImageGaussianFilter(const IMG_Mat &img, std::vector<IMG_Mat> &img_out,
   // LOG("img_fft.size:%d,%d", img_fft.cols, img_fft.rows);
   for (int i = 0; i < sigma.size(); ++i) {
     filter.D0 = _S(sigma[i]);
-    LOG("-频率滤波半径:%lf",_S(sigma[i]));
+    LOG("-频率滤波半径:%lf", _S(sigma[i]));
     for (int j = 0; j < img_fft.rows; ++j) {
       for (int k = 0; k < img_fft.cols; ++k) {
         img_tmp_out.at<std::complex<double>>(j, k) =
@@ -52,14 +50,8 @@ Eigen::Matrix2d rotate_matrix(const double &angle) {
   R << cos(angle), -sin(angle), sin(angle), cos(angle);
   return R;
 }
-/**
- * @brief 图像旋转
- * @param[in] src 原图像
- * @param[out] dst 旋转后的图像
- * @param[in] zoom 缩放比例
- * @param[in] angle 旋转角度(弧度)
- */
-void ImageChange(const IMG_Mat &src, IMG_Mat &dst, const double &zoom,
+template <typename PixeType>
+void _img_change(const IMG_Mat &src, IMG_Mat &dst, const double &zoom,
                  const double &angle) {
   if (src.channels() != 1) {
     ASSERT(false, "ImageChange: src must be gray image");
@@ -113,27 +105,43 @@ void ImageChange(const IMG_Mat &src, IMG_Mat &dst, const double &zoom,
 
   dst = cv::Mat(dst_center[0] * 2, dst_center[1] * 2, src.type());
   LOG("dst: %d,%d", dst.rows, dst.cols);
-  auto func = [&src](Eigen::Vector3d pose) -> uint8_t {
+  auto func = [&src](Eigen::Vector3d pose) -> PixeType {
     int x = static_cast<int>(pose[0]), y = static_cast<int>(pose[1]);
     if (x < 0 || y < 0 || x >= src.rows || y >= src.cols) {
       return 0;
     }
-    return src.at<uint8_t>(x, y);
+    return src.at<PixeType>(x, y);
   };
   // 算范围，改变图像框大小了，（方案2）
   for (int i = 0; i < dst.rows; i++) {
     for (int j = 0; j < dst.cols; j++) {
       Eigen::Vector3d pose = Eigen::Vector3d::Zero();
       pose << i, j, 1;
-      dst.at<uint8_t>(i, j) = func(T * pose);
+      dst.at<PixeType>(i, j) = func(T * pose);
     }
   }
 }
 
-void DrawPoints(const IMG_Mat &img, const std::vector<Point> &keypoints, IMG_Mat &img_out) {
+void ImageChange(const IMG_Mat &src, IMG_Mat &dst, const double &zoom,
+                 const double &angle) {
+  if (src.type() == CV_8U) {
+    _img_change<uchar>(src, dst, zoom, angle);
+  } else if (src.type() == CV_8S) {
+    _img_change<char>(src, dst, zoom, angle);
+  } else if (src.type() == CV_32F) {
+    _img_change<float>(src, dst, zoom, angle);
+  } else if (src.type() == CV_64F) {
+    _img_change<double>(src, dst, zoom, angle);
+  } else {
+    ASSERT(false, "ImageChange: unsupported type");
+  }
+}
+
+void DrawPoints(const IMG_Mat &img, const std::vector<SiftPointDescriptor> &keypoints,
+                IMG_Mat &img_out) {
   img_out = img.clone();
   for (const auto &p : keypoints) {
-    cv::circle(img_out, cv::Point(p.x, p.y), 3, cv::Scalar(0, 0, 255), 1);
+    cv::circle(img_out, cv::Point(p.keypoint.x, p.keypoint.y), 3, cv::Scalar(0, 0, 255), 1);
   }
 }
 }; // namespace MY_IMG
