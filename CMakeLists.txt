@@ -6,6 +6,7 @@ set(CMAKE_BUILD_TYPE "Release") # Debug/Release
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin)
 
+add_definitions(-DDEBUG)
 # add_subdirectory(Eigen3 REQUIRED)
 # include_directories(${EIGEN3_INCLUDE_DIRS})
 
@@ -14,6 +15,7 @@ include_directories("/usr/include/eigen3")
 
 add_subdirectory(unit)
 add_subdirectory(test)
+add_subdirectory(SIFT-opencv-v4.4.0)
 
 add_executable(main main.cc)
 

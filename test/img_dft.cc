@@ -1,6 +1,7 @@
 #include "unit.h"
 #include <time.h>
 #include <iostream>
+#include "image_operator.h"
 
 using namespace MY_IMG;
 
@@ -59,34 +60,8 @@ int main(int argc, char **argv) {
   cv::imshow("butter_low_img", ConvertSingleChannelMat2Uint8Mat<float>(butter_low_img));
 
   // 创建高斯滤波器
-  auto gauss_filter =
-      GaussianFilter({fft_img.rows / 2, fft_img.cols / 2}, 100);
-  cv::Mat gauss_img_low(fft_img.size(), fft_img.type());
-  // 进行滤波
-  for (int i = 0; i < fft_img.rows; i++) {
-    for (int j = 0; j < fft_img.cols; j++) {
-      gauss_img_low.at<std::complex<double>>(i, j) =
-          fft_img.at<std::complex<double>>(i, j) *
-          gauss_filter.LowPassFilter(i, j);
-    }
-  }
-
-  // get gauss low pass
-  cv::Mat gauss_low_img;
-  t1 = clock();
-  IFFT2D(gauss_img_low, gauss_low_img);
-  t2 = clock();
-  LOG("Gauss low pass time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
-  gauss_low_img = gauss_low_img(cv::Range(0,gray_img.rows),cv::Range(0,gray_img.cols));
-  // show
-  cv::imshow("gauss_low_img", ConvertSingleChannelMat2Uint8Mat<float>(gauss_low_img));
-
-  t1 = clock();
-  IFFT2D(fft_img,idft_img);
-  t2 = clock();
-  LOG("IFFT2D time: %f",static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
-  idft_img = idft_img(cv::Range(0,gray_img.rows),cv::Range(0,gray_img.cols));
-  cv::imshow("ifft", ConvertSingleChannelMat2Uint8Mat<float>(idft_img));
+  ImageGaussianFilter(gray_img, idft_img,2.6);
+  cv::imshow("ifft", idft_img / 255.0);
 
   cv::waitKey(0);
   return 0;

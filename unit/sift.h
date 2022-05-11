@@ -3,7 +3,7 @@
 
 #include "image_operator.h"
 #include "all.h"
-#define USE_CONVOLUTION
+#define USE_FILTER 2
 
 namespace MY_IMG {
 
@@ -31,6 +31,7 @@ struct SiftParam {
   int descr_hist_bins = 8; // 描述子直方图方向的维度
   float descr_mag_thr = 0.2; // 描述子幅度阈值
   float descr_scl_fctr = 3.0; // 描述子网格大小
+  int sift_fixpt_scale = 48; 
 };
 
 /** @brief 特征提取和描述子生成
@@ -38,7 +39,7 @@ struct SiftParam {
  * @param param sift参数
  * @param descriptors 提取出的关键点与其描述子
 */
-void SIFT(Image &img,std::vector<SiftPointDescriptor> &descriptors);
+void SIFT(Image &img,std::vector<KeyPoint> &descriptors);
 
 } // namespace MY_IMG
 

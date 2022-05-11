@@ -3,37 +3,35 @@
 
 namespace MY_IMG {
 double _S(double sigma) { return 0.001 * exp(-2 * sigma + 15); }
-void ImageGaussianFilter(const IMG_Mat &img, std::vector<IMG_Mat> &img_out,
-                         const std::vector<double> &sigma) {
+void ImageGaussianFilter(const IMG_Mat &img, IMG_Mat &img_out,
+                         const double &sigma) {
   int channel = img.channels();
   IMG_Mat img_tmp;
   if (channel == 3) {
-    Rgb2Gray(img, img_tmp, {1 / 3.0, 1 / 3.0, 1 / 3.0});
+    Rgb2Gray(img, img_tmp);
   } else {
     img_tmp = img.clone();
   }
 
   IMG_Mat img_fft;
   FFT2D(img_tmp, img_fft);
+
   IMG_Mat img_tmp_out = IMG_Mat::zeros(img_fft.size(), img_fft.type());
   IMG_Mat img_ift;
+  LOG("-> sigma: %f", _S(sigma));
   GaussianFilter filter(std::make_pair(img_fft.rows / 2, img_fft.cols / 2),
-                        sigma[0]);
+                        _S(sigma));
   // LOG("img_fft.size:%d,%d", img_fft.cols, img_fft.rows);
-  for (int i = 0; i < sigma.size(); ++i) {
-    filter.D0 = _S(sigma[i]);
-    LOG("-频率滤波半径:%lf", _S(sigma[i]));
-    for (int j = 0; j < img_fft.rows; ++j) {
-      for (int k = 0; k < img_fft.cols; ++k) {
-        img_tmp_out.at<std::complex<double>>(j, k) =
-            filter.LowPassFilter(j, k) * img_fft.at<std::complex<double>>(j, k);
-      }
+  for (int j = 0; j <img_fft.rows; ++j) {
+    for (int k = 0; k < img_fft.cols; ++k) {
+      img_tmp_out.at<std::complex<double>>(j, k) =
+          filter.LowPassFilter(j, k) * img_fft.at<std::complex<double>>(j, k);
     }
-    IFFT2D(img_tmp_out, img_ift);
-    // LOG("img_ift.size:%d,%d", img_ift.cols, img_ift.rows);
-    img_out.push_back(
-        img_ift(cv::Range(0, img_tmp.rows), cv::Range(0, img_tmp.cols)));
   }
+  IFFT2D(img_tmp_out, img_ift);
+  // LOG("img_ift.size:%d,%d", img_ift.cols, img_ift.rows);
+  img_out = img_ift(cv::Range(0, img_tmp.rows), cv::Range(0, img_tmp.cols));
+  
   // 释放Mat的内存
   img_ift.release();
   img_tmp_out.release();
@@ -137,11 +135,11 @@ void ImageChange(const IMG_Mat &src, IMG_Mat &dst, const double &zoom,
   }
 }
 
-void DrawPoints(const IMG_Mat &img, const std::vector<SiftPointDescriptor> &keypoints,
+void DrawPoints(const IMG_Mat &img, const std::vector<KeyPoint> &keypoints,
                 IMG_Mat &img_out) {
   img_out = img.clone();
   for (const auto &p : keypoints) {
-    cv::circle(img_out, cv::Point(p.keypoint.x, p.keypoint.y), 3, cv::Scalar(0, 0, 255), 1);
+    cv::circle(img_out, cv::Point(p.y, p.x), 3, cv::Scalar(0, 0, 255), 1);
   }
 }
 }; // namespace MY_IMG
