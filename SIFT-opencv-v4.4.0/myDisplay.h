@@ -19,6 +19,5 @@ public:
 		const vector<vector<Mat>>& gauss_pyr_2, const vector<vector<Mat>>& dog_pyr_2, int nOctaveLayers);
  
 	//没用到，后文没有对其进行定义
-	void write_keys_image(vector<KeyPoint>& keypoints_1, vector<KeyPoint>& keypoints_2,
-		const Mat& image_1, const Mat& image_2, Mat& image_1_keys, Mat& image_2_keys, bool double_size);
+	void write_keys_image(const Mat &img, const vector<KeyPoint> &keypoints,Mat &keypoints_image);
 };

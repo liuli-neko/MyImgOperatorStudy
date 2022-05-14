@@ -3,7 +3,7 @@
 
 #include "image_operator.h"
 #include "all.h"
-#define USE_FILTER 2
+#define USE_FILTER 1
 
 namespace MY_IMG {
 
@@ -11,7 +11,7 @@ namespace MY_IMG {
 struct SiftParam {
   int max_features = 0; // 最大特征点数量,0表示不限制
   int num_octave_layers = 5; // 图像金字塔内每一层的层数
-  double contrast_threshold = 0.04; // 对比度阈值(D(x))
+  double contrast_threshold = 0.03; // 对比度阈值(D(x))
   double edge_threshold = 10; // 边缘阈值(E(x))
   double sigma = 1.6; // 卷积核的标准差
   bool keep_appearance = true; // 是否保留原始图像
@@ -39,7 +39,7 @@ struct SiftParam {
  * @param param sift参数
  * @param descriptors 提取出的关键点与其描述子
 */
-void SIFT(Image &img,std::vector<KeyPoint> &descriptors);
+void SIFT(Image &img);
 
 } // namespace MY_IMG
 

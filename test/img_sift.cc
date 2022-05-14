@@ -9,8 +9,7 @@ int main(int argc, char const *argv[])
   MY_IMG::Image img;
   img.img = src;
   img.imgId = 0;
-  std::vector<MY_IMG::KeyPoint> descriptors;
-  MY_IMG::SIFT(img, descriptors);
+  MY_IMG::SIFT(img);
 
   return 0;
 }

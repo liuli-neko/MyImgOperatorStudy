@@ -1,4 +1,5 @@
 #include"myMatch.h"
+#include "myDisplay.h"
  
 #include<opencv2/imgproc/types_c.h>
 #include<opencv2/imgproc/imgproc.hpp>
@@ -1290,9 +1291,12 @@ Mat myMatch::match(const Mat& image_1, const Mat& image_2, const vector<vector<D
 	imwrite("./image_save/正确匹配点对.png", matched_line);
  
 	//保存和显示检测到的特征点
-	Mat keys_image_1, keys_image_2;											//输出矩阵，类似画布
-	drawKeypoints(image_1, keys_1, keys_image_1, Scalar(0, 255, 0));		//该函数用于绘制图像中的特征点
-	drawKeypoints(image_2, keys_2, keys_image_2, Scalar(0, 255, 0));
+	Mat keys_image_1, keys_image_2;										//输出矩阵，类似画布
+	myDisplay dp;
+	dp.write_keys_image(image_1, keys_1, keys_image_1);
+	dp.write_keys_image(image_2, keys_2, keys_image_2);
+	// drawKeypoints(image_1, keys_1, keys_image_1, Scalar(0, 255, 0));		//该函数用于绘制图像中的特征点
+	// drawKeypoints(image_2, keys_2, keys_image_2, Scalar(0, 255, 0));
 	imwrite("./image_save/参考图像检测到的特征点.png", keys_image_1);
 	imwrite("./image_save/待配准图像检测到的.png", keys_image_2);
  

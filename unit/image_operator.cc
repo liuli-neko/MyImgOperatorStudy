@@ -12,26 +12,28 @@ void ImageGaussianFilter(const IMG_Mat &img, IMG_Mat &img_out,
   } else {
     img_tmp = img.clone();
   }
-
+  // cv::imshow("img", img_tmp);
   IMG_Mat img_fft;
   FFT2D(img_tmp, img_fft);
-
+  // cv::imshow("img_fft", ConvertSingleChannelMat2Uint8Mat<double>(
+  //                           ConvertComplexMat2doubleMat(img_fft)));
   IMG_Mat img_tmp_out = IMG_Mat::zeros(img_fft.size(), img_fft.type());
   IMG_Mat img_ift;
   LOG("-> sigma: %f", _S(sigma));
   GaussianFilter filter(std::make_pair(img_fft.rows / 2, img_fft.cols / 2),
                         _S(sigma));
   // LOG("img_fft.size:%d,%d", img_fft.cols, img_fft.rows);
-  for (int j = 0; j <img_fft.rows; ++j) {
+  for (int j = 0; j < img_fft.rows; ++j) {
     for (int k = 0; k < img_fft.cols; ++k) {
       img_tmp_out.at<std::complex<double>>(j, k) =
           filter.LowPassFilter(j, k) * img_fft.at<std::complex<double>>(j, k);
     }
   }
   IFFT2D(img_tmp_out, img_ift);
+  // cv::imshow("img_ift", ConvertSingleChannelMat2Uint8Mat<float>(img_tmp_out));
   // LOG("img_ift.size:%d,%d", img_ift.cols, img_ift.rows);
   img_out = img_ift(cv::Range(0, img_tmp.rows), cv::Range(0, img_tmp.cols));
-  
+  // cv::waitKey(0);
   // 释放Mat的内存
   img_ift.release();
   img_tmp_out.release();
@@ -49,7 +51,7 @@ Eigen::Matrix2d rotate_matrix(const double &angle) {
   return R;
 }
 template <typename PixeType>
-void _img_change(const IMG_Mat &src, IMG_Mat &dst, const double &zoom,
+void _img_change(const IMG_Mat &src, IMG_Mat &out, const double &zoom,
                  const double &angle) {
   if (src.channels() != 1) {
     ASSERT(false, "ImageChange: src must be gray image");
@@ -101,7 +103,7 @@ void _img_change(const IMG_Mat &src, IMG_Mat &dst, const double &zoom,
   T.block<2, 1>(0, 2) = (center - R.inverse() * dst_center);
   T(2, 2) = 1;
 
-  dst = cv::Mat(dst_center[0] * 2, dst_center[1] * 2, src.type());
+  IMG_Mat dst = cv::Mat(dst_center[0] * 2, dst_center[1] * 2, src.type());
   LOG("dst: %d,%d", dst.rows, dst.cols);
   auto func = [&src](Eigen::Vector3d pose) -> PixeType {
     int x = static_cast<int>(pose[0]), y = static_cast<int>(pose[1]);
@@ -118,6 +120,9 @@ void _img_change(const IMG_Mat &src, IMG_Mat &dst, const double &zoom,
       dst.at<PixeType>(i, j) = func(T * pose);
     }
   }
+
+  out = dst.clone();
+  dst.release();
 }
 
 void ImageChange(const IMG_Mat &src, IMG_Mat &dst, const double &zoom,
@@ -139,7 +144,10 @@ void DrawPoints(const IMG_Mat &img, const std::vector<KeyPoint> &keypoints,
                 IMG_Mat &img_out) {
   img_out = img.clone();
   for (const auto &p : keypoints) {
-    cv::circle(img_out, cv::Point(p.y, p.x), 3, cv::Scalar(0, 0, 255), 1);
+    cv::circle(img_out, cv::Point(p.y, p.x), 3, cv::Scalar(0, 255, 0), 1);
+    cv::arrowedLine(img_out, cv::Point(p.y, p.x),
+                    cv::Point(p.y + sin(p.angle) * p.size, p.x + cos(p.angle) * p.size),
+                    cv::Scalar(255, 0, 0), 1, 8, 0, 0.1);
   }
 }
 }; // namespace MY_IMG

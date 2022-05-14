@@ -5,6 +5,7 @@ add_requires("libwebp")
 add_rules("mode.debug","mode.release")
 
 add_cxxflags("-fexec-charset=GBK")
+add_defines("DEBUG")
 add_includedirs("D:\\APP\\eigen-3.4.0")
 
 target("main")

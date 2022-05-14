@@ -22,7 +22,7 @@ add_library(mySift mySift.cpp)
 add_executable(SIFT main.cpp)
 
 target_link_libraries(myDisplay ${OpenCV_LIBS})
-target_link_libraries(myMatch ${OpenCV_LIBS})
+target_link_libraries(myMatch ${OpenCV_LIBS} myDisplay)
 target_link_libraries(mySift ${OpenCV_LIBS})
 target_link_libraries(SIFT ${OpenCV_LIBS})
 target_link_libraries(SIFT myDisplay myMatch mySift)

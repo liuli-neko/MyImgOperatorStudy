@@ -451,8 +451,14 @@ static float clac_orientation_hist(const Mat &image, Point pt, float scale,
 
   cv::hal::fastAtan2(Y, X, Ori, len,
                      true); //计算邻域内所有像素的梯度方向，角度范围0-360度
+  // for (int i = 0;i < len;i ++) {
+  //   LOG("Ori[%d] = %f , %f", i, Ori[i],cv::fastAtan2(Y[i], X[i]));
+  // }
   cv::hal::magnitude32f(
       X, Y, Mag, len); //计算邻域内所有像素的梯度幅度，计算的是数学意义上的梯度
+  // for (int i = 0;i < len;i ++) {
+  //   LOG("Mag[%d] = %f, %f", i, Mag[i],sqrt(X[i] * X[i] + Y[i] * Y[i]));
+  // }
 
   //遍历邻域的像素
   for (int i = 0; i < len; ++i) {
@@ -1290,6 +1296,8 @@ void mySift::find_scale_space_extrema1(const vector<vector<Mat>> &dog_pyr,
 
                 // kpt.angle = (360.f / n) * bin;			//原始
                 // SIFT 算子使用的特征点的主方向0-360度
+                LOG("[%d %d %d]",i,left,right);
+                LOG("point[%f,%f] angle: %f", kpt.pt.x, kpt.pt.y, kpt.angle);
                 keypoints.push_back(kpt); //保存该特征点
               }
             }
@@ -2347,7 +2355,8 @@ void mySift::detect(const Mat &image, vector<vector<Mat>> &gauss_pyr,
   build_dog_pyramid(dog_pyr, gauss_pyr);
   // for (int s = 0; s < dog_pyr[_o].size(); s++) {
   //   MY_IMG::ConvertTo<float, uint8_t>(
-  //       dog_pyr[_o][s], tmp, [](const float &x) -> uint8_t { return x * 255; });
+  //       dog_pyr[_o][s], tmp, [](const float &x) -> uint8_t { return x * 255;
+  //       });
   //   imshow("dog_pyr-" + to_string(s), tmp);
   // }
   // waitKey(0);

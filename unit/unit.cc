@@ -374,8 +374,9 @@ void _dft_core(
   dimg /= sqrt(width * height);
 }
 
-void _fft_core(std::vector<std::complex<double>> &src, const bool &is_fft) {
-  int lim = src.size(), len = 0;
+void _fft_core(std::shared_ptr<std::complex<double>[]> src, int lim,
+               const bool &is_fft) {
+  int len = 0;
   while ((1 << len) < lim) {
     len++;
   }
@@ -386,7 +387,7 @@ void _fft_core(std::vector<std::complex<double>> &src, const bool &is_fft) {
 
   for (int i = 0; i < lim; i++) {
     if (i < rev.at(i)) {
-      std::swap(src.at(i), src.at(rev.at(i)));
+      std::swap(src[i], src[rev.at(i)]);
     }
   }
   int opt = (is_fft ? -1 : 1);
@@ -395,9 +396,12 @@ void _fft_core(std::vector<std::complex<double>> &src, const bool &is_fft) {
     for (int i = 0; i < lim; i += m) {
       std::complex<double> w(1, 0);
       for (int j = 0; j < (m >> 1); j++, w = w * wn) {
-        std::complex<double> u = src.at(i + j),
-                             t = w * src.at(i + j + (m >> 1));
-        src.at(i + j) = u + t, src.at(i + j + (m >> 1)) = u - t;
+        ASSERT(i + j + (m >> 1) < lim, "i+j+(m >> 1) = %d,lim:%d",
+               i + j + (m >> 1), lim);
+        std::complex<double> u(0, 0), t(0, 0);
+        u = src[i + j];
+        t = w * src[i + j + (m >> 1)];
+        src[i + j] = u + t, src[i + j + (m >> 1)] = u - t;
       }
     }
   }
@@ -413,33 +417,41 @@ void _fft2D(const IMG_Mat &img, IMG_Mat &dft_img, const bool &is_fft) {
     lim_width <<= 1;
   }
   dft_img = IMG_Mat(lim_height, lim_width, CV_64FC2);
-  std::vector<std::complex<double>> tmp;
-  tmp.resize(lim_width, {0, 0});
+  std::shared_ptr<std::complex<double>[]> tmp(
+      new std::complex<double>[lim_width]());
+  // for (int i = 0;i < lim_width;i++) {
+  //   tmp[i] = std::complex<double>(0, 0);
+  // }
   // LOG("width : %d,size : %ld", width, tmp.size());
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      tmp.at(j) = img.at<std::complex<double>>(i, j);
+      tmp[j] = img.at<std::complex<double>>(i, j);
     }
     for (int j = width; j < lim_width; j++) {
-      tmp.at(j) = std::complex<double>(0, 0);
+      tmp[j] = std::complex<double>(0, 0);
     }
-    _fft_core(tmp, is_fft);
+    _fft_core(tmp,lim_width, is_fft);
     for (int j = 0; j < lim_width; j++) {
-      dft_img.at<std::complex<double>>(i, j) = tmp.at(j) / sqrt(lim_width);
+      dft_img.at<std::complex<double>>(i, j) = tmp[j] / sqrt(lim_width);
     }
   }
-  tmp.resize(lim_height, {0, 0});
+  for (int i = height; i < lim_height; i++) {
+    for (int j = 0; j < lim_width; j++) {
+      dft_img.at<std::complex<double>>(i, j) = std::complex<double>(0, 0);
+    }
+  }
+  tmp.reset(new std::complex<double>[lim_height]());
   // LOG("height : %d,size : %ld", height, tmp.size());
   for (int j = 0; j < lim_width; j++) {
     for (int i = 0; i < lim_height; i++) {
-      tmp.at(i) = dft_img.at<std::complex<double>>(i, j);
+      tmp[i] = dft_img.at<std::complex<double>>(i, j);
     }
-    _fft_core(tmp, is_fft);
+    _fft_core(tmp, lim_height, is_fft);
     for (int i = 0; i < lim_height; i++) {
-      dft_img.at<std::complex<double>>(i, j) = tmp.at(i) / sqrt(lim_height);
+      dft_img.at<std::complex<double>>(i, j) = tmp[i] / sqrt(lim_height);
     }
   }
-  tmp.clear();
+  tmp.reset();
 }
 void FFT2D(const IMG_Mat &img, IMG_Mat &dft_img) {
   IMG_Mat temp_img;
@@ -452,7 +464,7 @@ void FFT2D(const IMG_Mat &img, IMG_Mat &dft_img) {
   } else if (temp_img.type() == CV_64F) {
     temp_img = ConvertSingleChannelMat2ComplexMat<double>(img);
   } else {
-    ASSERT(false,"Unsupported type");
+    ASSERT(false, "Unsupported type");
   }
   _fftShift(temp_img);
   _fft2D(temp_img, dft_img, true);

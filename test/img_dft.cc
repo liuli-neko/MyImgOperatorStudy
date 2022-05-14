@@ -1,7 +1,8 @@
-#include "unit.h"
-#include <time.h>
-#include <iostream>
 #include "image_operator.h"
+#include "unit.h"
+#include <iostream>
+#include <time.h>
+
 
 using namespace MY_IMG;
 
@@ -18,10 +19,12 @@ int main(int argc, char **argv) {
 
   cv::Mat gray_img;
   Rgb2Gray(img, gray_img);
+  cv::Mat dft_img_abs,idft_img;
   // cv::imshow("gray_img", gray_img);
+  /*
   time_t t1,t2;
   cv::Mat fft_img;
-  cv::Mat dft_img_abs,idft_img;
+ 
 
   LOG("size : [%d %d]", gray_img.cols, gray_img.rows);
   t1 = clock();
@@ -53,14 +56,16 @@ int main(int argc, char **argv) {
   IFFT2D(butter_img_low, butter_low_img);
   t2 = clock();
   LOG("size: %d, %d", butter_low_img.rows, butter_low_img.cols);
-  LOG("Butterworth low pass time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
-  butter_low_img = butter_low_img(cv::Range(0,gray_img.rows),cv::Range(0,gray_img.cols));
-  
-  // show
-  cv::imshow("butter_low_img", ConvertSingleChannelMat2Uint8Mat<float>(butter_low_img));
+  LOG("Butterworth low pass time: %f", static_cast<double>(t2 - t1) /
+  CLOCKS_PER_SEC); butter_low_img =
+  butter_low_img(cv::Range(0,gray_img.rows),cv::Range(0,gray_img.cols));
 
+  // show
+  cv::imshow("butter_low_img",
+  ConvertSingleChannelMat2Uint8Mat<float>(butter_low_img));
+*/
   // 创建高斯滤波器
-  ImageGaussianFilter(gray_img, idft_img,2.6);
+  ImageGaussianFilter(gray_img, idft_img, 2.6);
   cv::imshow("ifft", idft_img / 255.0);
 
   cv::waitKey(0);

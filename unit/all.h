@@ -54,17 +54,6 @@ struct Point {
 struct Octave {
   std::vector<IMG_Mat> layers;
   std::vector<IMG_Mat> dog_layers;
-  ~Octave() {
-    release();
-  }
-  void release() {
-    for (int i = 0; i < layers.size(); ++i) {
-      layers[i].release();
-    }
-    for (int i = 0; i < dog_layers.size(); ++i) {
-      dog_layers[i].release();
-    }
-  }
 };
 // 定义用于存储sift描述子的结构体
 struct KeyPoint {
@@ -88,7 +77,6 @@ struct KeyPoint {
 struct Image {
   IMG_Mat img;
   int imgId;
-  std::vector<Octave> Octaves; // octave*layer
   std::vector<KeyPoint> keypoints;
 };
 } // namespace MY_IMG
