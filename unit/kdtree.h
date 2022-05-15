@@ -6,6 +6,8 @@
 #include <queue>
 #include <vector>
 
+#include "all.h"
+
 namespace MY_IMG {
 
 template <typename Element, typename val_type = int> struct KDTreeNode {
@@ -28,9 +30,9 @@ public:
     LOG("dim: %d", dim);
     nodes_.resize(elements.size());
     for (int i = 0; i < elements.size(); i++) {
-      nodes_[i] = std::shared_ptr<KDTreeNode<Element, val_type>>(
+      nodes_.at(i) = std::shared_ptr<KDTreeNode<Element, val_type>>(
           new KDTreeNode<Element, val_type>());
-      nodes_[i]->element = elements[i];
+      nodes_.at(i)->element = elements[i];
     }
   }
   ~KDTree() { nodes_.clear(); }
@@ -43,40 +45,47 @@ public:
       q_.pop();
     }
     for (int i = 0; i < (k << 1); i++) {
-      q_.push(std::make_pair(-1, -1));
+      q_.push(std::make_pair(1e9, 1e18));
     }
     query(0, nodes_.size() - 1, element);
+    while (q_.size() > k) {
+      q_.pop();
+    }
     for (int i = 0; i < k; i++) {
-      if (q_.top().first == -1) {
-        break;
+      if (q_.top().first == 1e9) {
+        q_.pop();
+        continue;
       }
-      result.push_back(nodes_[q_.top().first]->element);
+      ASSERT(q_.top().first < nodes_.size(), "q_.top.first[%d] < nodes_.size()[%ld]", q_.top().first,
+             nodes_.size());
+      // LOG("q : [%d] [%lf]", q_.top().first, q_.top().second);
+      result.push_back(nodes_.at(q_.top().first)->element);
       q_.pop();
     }
   }
 
 private:
   void update(int u) {
-    nodes_[u]->max_val.resize(n_);
-    nodes_[u]->min_val.resize(n_);
+    nodes_.at(u)->max_val.resize(n_);
+    nodes_.at(u)->min_val.resize(n_);
     for (int i = 0; i < n_; i++) {
-      nodes_[u]->max_val[i] = nodes_[u]->min_val[i] =
-          (*(nodes_[u]->element))[i];
+      nodes_.at(u)->max_val.at(i) = nodes_.at(u)->min_val.at(i) =
+          (*(nodes_.at(u)->element))[i];
     }
-    if (nodes_[u]->left != -1) {
+    if (nodes_.at(u)->left != -1) {
       for (int i = 0; i < n_; i++) {
-        nodes_[u]->max_val[i] = std::max(nodes_[u]->max_val[i],
-                                         nodes_[nodes_[u]->left]->max_val[i]);
-        nodes_[u]->min_val[i] = std::min(nodes_[u]->min_val[i],
-                                         nodes_[nodes_[u]->left]->min_val[i]);
+        nodes_.at(u)->max_val.at(i) = std::max(nodes_.at(u)->max_val.at(i),
+                                         nodes_.at(nodes_.at(u)->left)->max_val.at(i));
+        nodes_.at(u)->min_val.at(i) = std::min(nodes_.at(u)->min_val.at(i),
+                                         nodes_.at(nodes_.at(u)->left)->min_val.at(i));
       }
     }
-    if (nodes_[u]->right != -1) {
+    if (nodes_.at(u)->right != -1) {
       for (int i = 0; i < n_; i++) {
-        nodes_[u]->max_val[i] = std::max(nodes_[u]->max_val[i],
-                                         nodes_[nodes_[u]->right]->max_val[i]);
-        nodes_[u]->min_val[i] = std::min(nodes_[u]->min_val[i],
-                                         nodes_[nodes_[u]->right]->min_val[i]);
+        nodes_.at(u)->max_val.at(i) = std::max(nodes_.at(u)->max_val.at(i),
+                                         nodes_.at(nodes_.at(u)->right)->max_val.at(i));
+        nodes_.at(u)->min_val.at(i) = std::min(nodes_.at(u)->min_val.at(i),
+                                         nodes_.at(nodes_.at(u)->right)->min_val.at(i));
       }
     }
   }
@@ -94,8 +103,8 @@ private:
                 const std::shared_ptr<KDTreeNode<Element, val_type>> &b)
             -> bool { return (*(a->element))[flag] < (*(b->element))[flag]; });
 
-    nodes_[mid]->left = build(l, mid - 1, (flag + 1) % n_);
-    nodes_[mid]->right = build(mid + 1, r, (flag + 1) % n_);
+    nodes_.at(mid)->left = build(l, mid - 1, (flag + 1) % n_);
+    nodes_.at(mid)->right = build(mid + 1, r, (flag + 1) % n_);
 
     update(mid);
     return mid;
@@ -103,42 +112,65 @@ private:
 
   double getMax(int x, const Element &elem) {
     double dist = 0;
-    if (x == -1) {
+    if (x <= -1) {
       return -1;
     }
+    ASSERT(x >= 0 && x < nodes_.size(), "index error : %d > nodes_.size(%ld)", x, nodes_.size());
     for (int i = 0; i < n_; i++) {
       dist += std::max(sqr(static_cast<double>(
-                           (*elem)[i] - nodes_[nodes_[x]->left]->max_val[i])),
+                           (*elem)[i] - nodes_.at(x)->max_val.at(i))),
                        sqr(static_cast<double>(
-                           (*elem)[i] - nodes_[nodes_[x]->right]->min_val[i])));
+                           (*elem)[i] - nodes_.at(x)->min_val.at(i))));
+    }
+    return dist;
+  }
+
+  double getMin(int x,const Element &elem) {
+    double dist = 0;
+    if (x <= -1) {
+      return 1e9;
+    }
+    ASSERT(x >= 0 && x < nodes_.size(), "index error : %d > nodes_.size(%ld)", x, nodes_.size());
+    for (int i = 0; i < n_; i++) {
+      dist += std::min(sqr(static_cast<double>(
+                           (*elem)[i] - nodes_.at(x)->max_val.at(i))),
+                       sqr(static_cast<double>(
+                           (*elem)[i] - nodes_.at(x)->min_val.at(i))));
     }
     return dist;
   }
 
   void query(int l, int r, const Element &elem) {
-    if (l > r)
+    if (l > r){
       return;
-    int mid = (l + r) >> 1;
-    double dist = getMax(mid, elem);
-    if (dist > q_.top().second) {
-      q_.pop();
-      q_.push(std::make_pair(mid, dist));
     }
-    double distl = getMax(nodes_[mid]->left, elem);
-    double distr = getMax(nodes_[mid]->right, elem);
-
-    if (distl > distr) {
-      if (distl > q_.top().second) {
+    ASSERT(l >= 0 && l < nodes_.size(), "index error : %d > nodes_.size(%ld)", l, nodes_.size());
+    ASSERT(r >= 0 && r < nodes_.size(), "index error : %d > nodes_.size(%ld)", r, nodes_.size());
+    int mid = (l + r) >> 1;
+    double dist = 0;
+    for (int i = 0; i < n_; i++) {
+      dist += sqr(static_cast<double>((*elem)[i] - (*(nodes_.at(mid)->element))[i]));
+    }
+    if (dist <= q_.top().second) {
+      q_.pop();
+      q_.push({mid, dist});
+    }
+    // LOG("l: %d, r: %d, mid : %d, dist: %lf", l, r, mid, dist);
+    double distl = getMin(nodes_.at(mid)->left, elem);
+    double distr = getMin(nodes_.at(mid)->right, elem);
+    // LOG("distl: %lf, distr: %lf", distl, distr);
+    if (distl < distr) {
+      if (distl <= q_.top().second) {
         query(l, mid - 1, elem);
       }
-      if (distr > q_.top().second) {
+      if (distr <= q_.top().second) {
         query(mid + 1, r, elem);
       }
     } else {
-      if (distr > q_.top().second) {
+      if (distr <= q_.top().second) {
         query(mid + 1, r, elem);
       }
-      if (distl > q_.top().second) {
+      if (distl <= q_.top().second) {
         query(l, mid - 1, elem);
       }
     }
@@ -149,7 +181,7 @@ private:
       if (a.second == b.second) {
         return a.first < b.first;
       }
-      return a.second > b.second;
+      return a.second < b.second;
     }
   };
   std::priority_queue<std::pair<int, double>,

@@ -19,14 +19,15 @@ void Match(const std::shared_ptr<Tree> &tree,
   for (auto &kp : kps) {
     std::vector<std::shared_ptr<MY_IMG::KeyPoint>> result;
     tree->Query(kp, k, result);
-    for (int i = 0; i < result.size(); i++) {
-      double dist = 0;
+    double dist = 0;
+    for (int i = 0; i < result.size(); i++) {  
       for (int j = 0; j < kp->descriptor.size(); j++) {
         dist += sqr(kp->descriptor[j] - result[i]->descriptor[j]);
       }
-      if (dist > MAX_MATCH_DISTANCE) {
-        continue;
-      }
+    }
+    LOG("dist : %f", dist);
+    if (dist > MAX_MATCH_DISTANCE) {
+      continue;
     }
     match_result.push_back(std::make_pair(kp, result));
   }

@@ -165,7 +165,7 @@ void DrawMatch(
   for (const auto &p : match_result) {
     cv::circle(img_out, cv::Point(p.first->y, p.first->x), 3,
                cv::Scalar(0, 0, 255), 1);
-    cv::circle(img_out, cv::Point(p.first->y + img1.cols, p.first->x), 3,
+    cv::circle(img_out, cv::Point(p.second[0]->y + img1.cols, p.second[0]->x), 3,
                cv::Scalar(0, 0, 255), 1);
     cv::line(img_out, cv::Point(p.first->y, p.first->x),
              cv::Point(p.second[0]->y + img1.cols, p.second[0]->x), cv::Scalar(0, 255, 0),
