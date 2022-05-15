@@ -97,7 +97,7 @@ void _init_dog_pyramid(Image &src, std::vector<Octave> &Octaves,
   }
 }
 bool _adjust_local_extrema(Image &src, const std::vector<Octave> &Octaves,
-                           const SiftParam &param, KeyPoint &kp, int octave,
+                           const SiftParam &param, std::shared_ptr<KeyPoint> kp, int octave,
                            int &layer, int &row, int &col) {
   // -----------------------迭代更新关键点位置-------------------------------
   const float img_scale = 1.0f / (255 * param.sift_fixpt_scale);
@@ -231,22 +231,22 @@ bool _adjust_local_extrema(Image &src, const std::vector<Octave> &Octaves,
   }
 
   // ------------------------------保存特征点-----------------------------------
-  kp.x = ((float)row + xc) * pow(2, octave - param.keep_appearance);
-  kp.y = ((float)col + xr) * pow(2, octave - param.keep_appearance);
+  kp->x = ((float)row + xc) * pow(2, octave - param.keep_appearance);
+  kp->y = ((float)col + xr) * pow(2, octave - param.keep_appearance);
 
   // SIFT 描述子
-  kp.octave = octave + (layer << 8) + (int(xi + 0.5) << 16);
-  kp.size = param.sigma * powf(2.0f, (layer + xi) / param.num_octave_layers) *
+  kp->octave = octave + (layer << 8) + (int(xi + 0.5) << 16);
+  kp->size = param.sigma * powf(2.0f, (layer + xi) / param.num_octave_layers) *
             (1 << octave) * 2;
-  kp.response = abs(contr);
+  kp->response = abs(contr);
 
   return true;
 }
 
 float _calc_orientation_hist(const IMG_Mat &img, const SiftParam &param,
-                             KeyPoint &kp, float scale, int n) {
+                             std::shared_ptr<KeyPoint> kp, float scale, int n) {
   // -----------------------------计算描述子--------------------------------
-  std::vector<float> &hist = kp.descriptor;
+  std::vector<float> &hist = kp->descriptor;
   hist.resize(n); // 初始化描述子
   int radius = static_cast<int>(param.ori_radius * scale + 0.5);
 
@@ -268,13 +268,13 @@ float _calc_orientation_hist(const IMG_Mat &img, const SiftParam &param,
   int k = 0;
 
   for (int i = -radius; i < radius; i++) {
-    int y = kp.y + i;
+    int y = kp->y + i;
 
     if (y <= 0 || y >= img.rows - 1) {
       continue;
     }
     for (int j = -radius; j < radius; j++) {
-      int x = kp.x + j;
+      int x = kp->x + j;
 
       if (x <= 0 || x >= img.cols - 1) {
         continue;
@@ -351,7 +351,7 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
   LOG("-----------------------检测极值点--------------------------------");
   float threshold = param.contrast_threshold / param.num_octave_layers;
   const int n = param.ori_hist_bins;
-  std::vector<KeyPoint> kpt;
+  std::vector<std::shared_ptr<KeyPoint> > kpt;
 
   src.keypoints.clear();
   int dx[] = {-1, 0, 1, -1, 1, -1, 0, 1, 0};
@@ -399,14 +399,14 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
           if (min_x || max_x) {
             numKeys++;
             // 检测极值点
-            KeyPoint kp;
+            std::shared_ptr<KeyPoint> kp(new KeyPoint);
             int octave = i, layer = j, r1 = x, c1 = y;
             if (_adjust_local_extrema(src, Octaves, param, kp, octave, layer,
                                       r1, c1)) {
               // ASSERT(kp.x == r1 && kp.y == c1,"kp(%d %d) != (%d %d)", kp.x,
               // kp.y, r1, c1);
 
-              float scale = kp.size / float(1 << octave);
+              float scale = kp->size / float(1 << octave);
 
               // 计算关键点的主方向
               float max_hist = _calc_orientation_hist(
@@ -416,7 +416,7 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
               float mag_thr = 0.0;
 
               for (int i = 0; i < n; i++) {
-                sum += kp.descriptor[i];
+                sum += kp->descriptor[i];
               }
               mag_thr = 0.5 * (1.0 / 36) * sum;
 
@@ -426,20 +426,20 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
                 int right = i < n - 1 ? i + 1 : 0;
 
                 //创建新的特征点，大于主峰的80%
-                if (kp.descriptor[i] > kp.descriptor[left] &&
-                    kp.descriptor[i] > kp.descriptor[right] &&
-                    kp.descriptor[i] >= mag_thr) {
+                if (kp->descriptor[i] > kp->descriptor[left] &&
+                    kp->descriptor[i] > kp->descriptor[right] &&
+                    kp->descriptor[i] >= mag_thr) {
                   float bin =
-                      i + 0.5f * (kp.descriptor[left] - kp.descriptor[right]) /
-                              (kp.descriptor[left] + kp.descriptor[right] -
-                               2 * kp.descriptor[i]);
+                      i + 0.5f * (kp->descriptor[left] - kp->descriptor[right]) /
+                              (kp->descriptor[left] + kp->descriptor[right] -
+                               2 * kp->descriptor[i]);
                   bin = bin < 0 ? n + bin : bin >= n ? bin - n : bin;
                   // 对主方向做一个细化
                   float angle = (360.0f / n) * bin;
                   if (angle >= 1 && angle <= 180) {
-                    kp.angle = angle;
+                    kp->angle = angle;
                   } else if (angle > 180 && angle <= 360) {
-                    kp.angle = 360 - angle;
+                    kp->angle = 360 - angle;
                   }
                   kpt.push_back(kp);
                 }
@@ -484,8 +484,8 @@ void FeatureExtraction(Image &src, const SiftParam &param) {
   // 如果设置了特征点个数限制，则进行剪裁
   if (param.max_features != 0 && src.keypoints.size() > param.max_features) {
     std::sort(src.keypoints.begin(), src.keypoints.end(),
-              [](const KeyPoint &a, const KeyPoint &b) {
-                return a.response > b.response;
+              [](const std::shared_ptr<KeyPoint> &a, const std::shared_ptr<KeyPoint> &b) {
+                return a->response > b->response;
               });
     // 删除多余的特征点
     src.keypoints.erase(src.keypoints.begin() + param.max_features,
@@ -494,8 +494,8 @@ void FeatureExtraction(Image &src, const SiftParam &param) {
   // show
 #ifdef DEBUG
   LOG("keypoints size:%ld", src.keypoints.size());
-  int _o = 1;
-  IMG_Mat tmp = IMG_Mat(octaves[_o].layers[0].size(), CV_8U);
+  // int _o = 1;
+  // IMG_Mat tmp = IMG_Mat(octaves[_o].layers[0].size(), CV_8U);
   // for (int i = 0; i < param.num_octave_layers + 3; i++) {
   //   ConvertTo<float, uint8_t>(octaves[_o].layers[i], tmp,
   //                             [](const float &pixe) -> uint8_t {
@@ -513,11 +513,11 @@ void FeatureExtraction(Image &src, const SiftParam &param) {
   // }
   // tmp.release();
 
-  DrawPoints(src.img, src.keypoints, tmp);
+  // DrawPoints(src.img, src.keypoints, tmp);
   // cv::imshow("keypoints", tmp);
-  cv::imwrite("./keypoints_img.png", tmp);
+  // cv::imwrite("./keypoints_img.png", tmp);
   // cv::waitKey(0);
-  tmp.release();
+  // tmp.release();
 #endif
   // -----------------------释放图像金字塔内存--------------------------------
   LOG("释放图像金字塔内存");

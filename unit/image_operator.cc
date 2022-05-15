@@ -30,7 +30,8 @@ void ImageGaussianFilter(const IMG_Mat &img, IMG_Mat &img_out,
     }
   }
   IFFT2D(img_tmp_out, img_ift);
-  // cv::imshow("img_ift", ConvertSingleChannelMat2Uint8Mat<float>(img_tmp_out));
+  // cv::imshow("img_ift",
+  // ConvertSingleChannelMat2Uint8Mat<float>(img_tmp_out));
   // LOG("img_ift.size:%d,%d", img_ift.cols, img_ift.rows);
   img_out = img_ift(cv::Range(0, img_tmp.rows), cv::Range(0, img_tmp.cols));
   // cv::waitKey(0);
@@ -140,14 +141,35 @@ void ImageChange(const IMG_Mat &src, IMG_Mat &dst, const double &zoom,
   }
 }
 
-void DrawPoints(const IMG_Mat &img, const std::vector<KeyPoint> &keypoints,
+void DrawPoints(const IMG_Mat &img,
+                const std::vector<std::shared_ptr<KeyPoint>> &keypoints,
                 IMG_Mat &img_out) {
   img_out = img.clone();
   for (const auto &p : keypoints) {
-    cv::circle(img_out, cv::Point(p.y, p.x), 3, cv::Scalar(0, 255, 0), 1);
-    cv::arrowedLine(img_out, cv::Point(p.y, p.x),
-                    cv::Point(p.y + sin(p.angle) * p.size, p.x + cos(p.angle) * p.size),
+    cv::circle(img_out, cv::Point(p->y, p->x), 3, cv::Scalar(0, 255, 0), 1);
+    cv::arrowedLine(img_out, cv::Point(p->y, p->x),
+                    cv::Point(p->y + sin(p->angle) * p->size,
+                              p->x + cos(p->angle) * p->size),
                     cv::Scalar(255, 0, 0), 1, 8, 0, 0.1);
+  }
+}
+void DrawMatch(
+    const IMG_Mat &img1, const IMG_Mat &img2,
+    const std::vector<std::pair<std::shared_ptr<KeyPoint>,
+                                std::vector<std::shared_ptr<KeyPoint>>>>
+        &match_result,
+    IMG_Mat &img_out) {
+  ASSERT(img1.type() == img2.type(), "img1 and img2 type must be same");
+  cv::hconcat(img1, img2, img_out);
+
+  for (const auto &p : match_result) {
+    cv::circle(img_out, cv::Point(p.first->y, p.first->x), 3,
+               cv::Scalar(0, 0, 255), 1);
+    cv::circle(img_out, cv::Point(p.first->y + img1.cols, p.first->x), 3,
+               cv::Scalar(0, 0, 255), 1);
+    cv::line(img_out, cv::Point(p.first->y, p.first->x),
+             cv::Point(p.second[0]->y + img1.cols, p.second[0]->x), cv::Scalar(0, 255, 0),
+             1);
   }
 }
 }; // namespace MY_IMG

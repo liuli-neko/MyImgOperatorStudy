@@ -5,6 +5,8 @@
 #include <functional>
 #include <iostream>
 #include <vector>
+#include <memory>
+
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -72,12 +74,15 @@ struct KeyPoint {
     return x < p.x;
   }
   bool operator==(const KeyPoint &p) const { return x == p.x && y == p.y; }
+  float operator[](const int &index) const {
+    return descriptor.at(index);
+  }
 };
 // 定义用于保存原始图片的结构体
 struct Image {
   IMG_Mat img;
   int imgId;
-  std::vector<KeyPoint> keypoints;
+  std::vector<std::shared_ptr<KeyPoint>> keypoints;
 };
 } // namespace MY_IMG
 
