@@ -24,7 +24,7 @@ void DrawPoints(const IMG_Mat &img, const std::vector<std::shared_ptr<KeyPoint>>
                 IMG_Mat &img_out);
 void DrawMatch(const IMG_Mat &img1, const IMG_Mat &img2,
                const std::vector<std::pair<std::shared_ptr<KeyPoint>,
-                                           std::vector<std::shared_ptr<KeyPoint>>>>
+                                           std::shared_ptr<KeyPoint>>>
                    &match_result,
                IMG_Mat &img_out);
 template <typename InPixeType, typename OutPixeType>

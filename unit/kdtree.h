@@ -25,7 +25,8 @@ public:
    * @param elements 元素集合
    * @param dim 元素维度
    */
-  KDTree(std::vector<Element> &elements, int dim) : n_(dim) {
+  std::vector<Element> &elements;
+  KDTree(std::vector<Element> &elements, int dim) : elements(elements), n_(dim) {
     LOG("create kdtree...");
     LOG("dim: %d", dim);
     nodes_.resize(elements.size());
@@ -58,10 +59,11 @@ public:
       }
       ASSERT(q_.top().first < nodes_.size(), "q_.top.first[%d] < nodes_.size()[%ld]", q_.top().first,
              nodes_.size());
-      // LOG("q : [%d] [%lf]", q_.top().first, q_.top().second);
+      LOG("q : [%d] [%lf]", q_.top().first, q_.top().second);
       result.push_back(nodes_.at(q_.top().first)->element);
       q_.pop();
     }
+    std::reverse(result.begin(), result.end());
   }
 
 private:

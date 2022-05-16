@@ -122,3 +122,15 @@ target("img_sift")
     if is_mode("debug") then 
         add_defines("DEBUG")
     end
+
+target("kdtree_test")
+    add_includedirs("unit/")
+    add_packages("opencv")
+    add_packages("libjpeg")
+    add_packages("libpng")
+    add_packages("libwebp")
+    add_files("unit/*.cc")
+    add_files("test/kdtree_test.cc")
+    if is_mode("debug") then 
+        add_defines("DEBUG")
+    end

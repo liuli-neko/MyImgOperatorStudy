@@ -156,7 +156,7 @@ void DrawPoints(const IMG_Mat &img,
 void DrawMatch(
     const IMG_Mat &img1, const IMG_Mat &img2,
     const std::vector<std::pair<std::shared_ptr<KeyPoint>,
-                                std::vector<std::shared_ptr<KeyPoint>>>>
+                                std::shared_ptr<KeyPoint>>>
         &match_result,
     IMG_Mat &img_out) {
   ASSERT(img1.type() == img2.type(), "img1 and img2 type must be same");
@@ -165,10 +165,10 @@ void DrawMatch(
   for (const auto &p : match_result) {
     cv::circle(img_out, cv::Point(p.first->y, p.first->x), 3,
                cv::Scalar(0, 0, 255), 1);
-    cv::circle(img_out, cv::Point(p.second[0]->y + img1.cols, p.second[0]->x), 3,
+    cv::circle(img_out, cv::Point(p.second->y + img1.cols, p.second->x), 3,
                cv::Scalar(0, 0, 255), 1);
     cv::line(img_out, cv::Point(p.first->y, p.first->x),
-             cv::Point(p.second[0]->y + img1.cols, p.second[0]->x), cv::Scalar(0, 255, 0),
+             cv::Point(p.second->y + img1.cols, p.second->x), cv::Scalar(0, 255, 0),
              1);
   }
 }
