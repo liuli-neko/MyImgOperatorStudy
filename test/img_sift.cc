@@ -27,7 +27,15 @@ int main(int argc, char const *argv[]) {
   MY_IMG::SIFT(src_img2);
   time(&end);
   LOG("SIFT use time: %f", difftime(end, start));
-
+  // 去个重？
+  std::sort(src_img1.keypoints.begin(), src_img1.keypoints.end());
+  src_img1.keypoints.erase(
+      std::unique(src_img1.keypoints.begin(), src_img1.keypoints.end()),
+      src_img1.keypoints.end());
+  std::sort(src_img2.keypoints.begin(), src_img2.keypoints.end());
+  src_img2.keypoints.erase(
+      std::unique(src_img2.keypoints.begin(), src_img2.keypoints.end()),
+      src_img2.keypoints.end());
   std::shared_ptr<MY_IMG::Tree> tree1 = MY_IMG::BuildKDTree(src_img1);
   std::shared_ptr<MY_IMG::Tree> tree2 = MY_IMG::BuildKDTree(src_img2);
 
@@ -36,12 +44,13 @@ int main(int argc, char const *argv[]) {
       match_result;
   MY_IMG::Match(tree1, tree2, match_result);
   for (auto &kp : match_result) {
-    LOG("(%d %d)-(%d %d)", kp.first->x, kp.first->y, kp.second->x, kp.second->y);
+    LOG("(%d %d)-(%d %d)", kp.first->x, kp.first->y, kp.second->x,
+        kp.second->y);
   }
 
-  IMG_Mat src_out1,src_out2;
-  MY_IMG::DrawPoints(src_img1.img,src_img1.keypoints,src_out1);
-  MY_IMG::DrawPoints(src_img2.img,src_img2.keypoints,src_out2);
+  IMG_Mat src_out1, src_out2;
+  MY_IMG::DrawPoints(src_img1.img, src_img1.keypoints, src_out1);
+  MY_IMG::DrawPoints(src_img2.img, src_img2.keypoints, src_out2);
 
   cv::imwrite("./image1_feature.png", src_out1);
   cv::imwrite("./image2_feature.png", src_out2);
