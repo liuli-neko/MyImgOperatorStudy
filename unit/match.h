@@ -7,7 +7,7 @@
 
 namespace MY_IMG {
 #define MAX_MATCH_DISTANCE 0.00005
-#define MAX_MATCH_BLOCK_SIZE 3
+#define MAX_MATCH_BLOCK_SIZE 10
 using Tree = KDTree<std::shared_ptr<KeyPoint>, float>;
 
 std::shared_ptr<Tree> BuildKDTree(Image &src_featured);
