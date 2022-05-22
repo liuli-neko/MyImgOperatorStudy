@@ -2,5 +2,4 @@ SIFT-opencv-v4.4.0
 .vscode
 .xmake
 build
-data
 *.log

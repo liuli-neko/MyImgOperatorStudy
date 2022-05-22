@@ -40,7 +40,7 @@ struct SiftParam {
  * @param descriptors 提取出的关键点与其描述子
 */
 void SIFT(Image &img);
-
+void FeatureExtraction(Image &src, const SiftParam &param);
 } // namespace MY_IMG
 
 #endif
