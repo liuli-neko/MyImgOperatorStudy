@@ -27,8 +27,8 @@ public:
    */
   std::vector<Element> &elements;
   KDTree(std::vector<Element> &elements, int dim) : elements(elements), n_(dim) {
-    LOG("create kdtree...");
-    LOG("dim: %d", dim);
+    LOG(INFO,"create kdtree...");
+    LOG(INFO,"dim: %d", dim);
     nodes_.resize(elements.size());
     for (int i = 0; i < elements.size(); i++) {
       nodes_.at(i) = std::shared_ptr<KDTreeNode<Element, val_type>>(
@@ -39,7 +39,7 @@ public:
   ~KDTree() { nodes_.clear(); }
   void Build() {
     int root = build(0, nodes_.size() - 1, 0);
-    LOG("the root : %d,size : %ld", root, nodes_.size());
+    LOG(INFO,"the root : %d,size : %ld", root, nodes_.size());
   }
   void Query(const Element &element, int k, std::vector<Element> &result) {
     while (q_.size()) {
@@ -59,7 +59,7 @@ public:
       }
       ASSERT(q_.top().first < nodes_.size(), "q_.top.first[%d] < nodes_.size()[%ld]", q_.top().first,
              nodes_.size());
-      LOG("q : [%d] [%lf]", q_.top().first, q_.top().second);
+      LOG(INFO,"q : [%d] [%lf]", q_.top().first, q_.top().second);
       result.push_back(nodes_.at(q_.top().first)->element);
       q_.pop();
     }
@@ -157,10 +157,10 @@ private:
       q_.pop();
       q_.push({mid, dist});
     }
-    // LOG("l: %d, r: %d, mid : %d, dist: %lf", l, r, mid, dist);
+    // LOG(INFO,"l: %d, r: %d, mid : %d, dist: %lf", l, r, mid, dist);
     double distl = getMin(nodes_.at(mid)->left, elem);
     double distr = getMin(nodes_.at(mid)->right, elem);
-    // LOG("distl: %lf, distr: %lf", distl, distr);
+    // LOG(INFO,"distl: %lf, distr: %lf", distl, distr);
     if (distl < distr) {
       if (distl <= q_.top().second) {
         query(l, mid - 1, elem);

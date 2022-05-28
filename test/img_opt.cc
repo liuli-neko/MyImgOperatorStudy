@@ -24,7 +24,7 @@ int main(int argc, char const *argv[])
   MY_IMG::Rgb2Gray(cv::imread(img_path), src, {1/3.0, 1/3.0, 1/3.0});
   cv::Mat dst;
   MY_IMG::ImageChange(src, dst, zoom, angle);
-  LOG("zoom:%f,angle:%f",zoom,angle);
+  LOG(INFO,"zoom:%f,angle:%f",zoom,angle);
   cv::imshow("dst", dst);
   cv::waitKey(0);
   cv::imwrite(output, dst);

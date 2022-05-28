@@ -19,10 +19,10 @@ void ImageGaussianFilter(const IMG_Mat &img, IMG_Mat &img_out,
   //                           ConvertComplexMat2doubleMat(img_fft)));
   IMG_Mat img_tmp_out = IMG_Mat::zeros(img_fft.size(), img_fft.type());
   IMG_Mat img_ift;
-  LOG("-> sigma: %f", _S(sigma));
+  LOG(INFO,"-> sigma: %f", _S(sigma));
   GaussianFilter filter(std::make_pair(img_fft.rows / 2, img_fft.cols / 2),
                         _S(sigma));
-  // LOG("img_fft.size:%d,%d", img_fft.cols, img_fft.rows);
+  // LOG(INFO,"img_fft.size:%d,%d", img_fft.cols, img_fft.rows);
   for (int j = 0; j < img_fft.rows; ++j) {
     for (int k = 0; k < img_fft.cols; ++k) {
       img_tmp_out.at<std::complex<double>>(j, k) =
@@ -32,7 +32,7 @@ void ImageGaussianFilter(const IMG_Mat &img, IMG_Mat &img_out,
   IFFT2D(img_tmp_out, img_ift);
   // cv::imshow("img_ift",
   // ConvertSingleChannelMat2Uint8Mat<float>(img_tmp_out));
-  // LOG("img_ift.size:%d,%d", img_ift.cols, img_ift.rows);
+  // LOG(INFO,"img_ift.size:%d,%d", img_ift.cols, img_ift.rows);
   img_out = img_ift(cv::Range(0, img_tmp.rows), cv::Range(0, img_tmp.cols));
   // cv::waitKey(0);
   // 释放Mat的内存
@@ -98,14 +98,14 @@ void _img_change(const IMG_Mat &src, IMG_Mat &out, const double &zoom,
 
   // 计算旋转后图像的中心点坐标
   dst_center << (max_x - min_x) / 2, (max_y - min_y) / 2;
-  LOG("dst_center: %lf,%lf", dst_center[0], dst_center[1]);
+  LOG(INFO,"dst_center: %lf,%lf", dst_center[0], dst_center[1]);
   // 计算从dst到src的T
   T.block<2, 2>(0, 0) = R.inverse();
   T.block<2, 1>(0, 2) = (center - R.inverse() * dst_center);
   T(2, 2) = 1;
 
   IMG_Mat dst = cv::Mat(dst_center[0] * 2, dst_center[1] * 2, src.type());
-  LOG("dst: %d,%d", dst.rows, dst.cols);
+  LOG(INFO,"dst: %d,%d", dst.rows, dst.cols);
   auto func = [&src](Eigen::Vector3d pose) -> PixeType {
     int x = static_cast<int>(pose[0]), y = static_cast<int>(pose[1]);
     if (x < 0 || y < 0 || x >= src.rows || y >= src.cols) {
@@ -156,8 +156,7 @@ void DrawPoints(const IMG_Mat &img,
 void DrawMatch(
     const IMG_Mat &img1, const IMG_Mat &img2,
     const std::vector<std::pair<std::shared_ptr<KeyPoint>,
-                                std::shared_ptr<KeyPoint>>>
-        &match_result,
+                                std::shared_ptr<KeyPoint>>> &match_result,
     IMG_Mat &img_out) {
   ASSERT(img1.type() == img2.type(), "img1 and img2 type must be same");
   cv::hconcat(img1, img2, img_out);
@@ -168,8 +167,21 @@ void DrawMatch(
     cv::circle(img_out, cv::Point(p.second->y + img1.cols, p.second->x), 3,
                cv::Scalar(0, 0, 255), 1);
     cv::line(img_out, cv::Point(p.first->y, p.first->x),
-             cv::Point(p.second->y + img1.cols, p.second->x), cv::Scalar(0, 255, 0),
-             1);
+             cv::Point(p.second->y + img1.cols, p.second->x),
+             cv::Scalar(0, 255, 0), 1);
+  }
+}
+void DrayPoints(const IMG_Mat &img, const std::vector<cv::KeyPoint> &keypoints,
+                IMG_Mat &img_out) {
+  img_out = img.clone();
+
+  for (const auto &p : keypoints) {
+    cv::circle(img_out, cv::Point2i(p.pt.x, p.pt.y), 3, cv::Scalar(0, 255, 0),
+               1);
+    cv::arrowedLine(img_out, cv::Point(p.pt.x, p.pt.y),
+                    cv::Point(p.pt.x + sin(p.angle) * p.size,
+                              p.pt.y + cos(p.angle) * p.size),
+                    cv::Scalar(255, 0, 0), 1, 8, 0, 0.1);
   }
 }
 }; // namespace MY_IMG

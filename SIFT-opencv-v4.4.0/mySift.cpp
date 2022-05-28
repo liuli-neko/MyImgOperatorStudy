@@ -274,7 +274,7 @@ void mySift::build_gaussian_pyramid(const Mat &init_image,
     sig.push_back(sqrt(curr_sig * curr_sig - prev_sig * prev_sig));
   }
   for (auto s : sig) {
-    LOG("sig:%lf", s);
+    LOG(INFO,"sig:%lf", s);
   }
   gauss_pyramid.resize(nOctaves);
 
@@ -452,12 +452,12 @@ static float clac_orientation_hist(const Mat &image, Point pt, float scale,
   cv::hal::fastAtan2(Y, X, Ori, len,
                      true); //计算邻域内所有像素的梯度方向，角度范围0-360度
   // for (int i = 0;i < len;i ++) {
-  //   LOG("Ori[%d] = %f , %f", i, Ori[i],cv::fastAtan2(Y[i], X[i]));
+  //   LOG(INFO,"Ori[%d] = %f , %f", i, Ori[i],cv::fastAtan2(Y[i], X[i]));
   // }
   cv::hal::magnitude32f(
       X, Y, Mag, len); //计算邻域内所有像素的梯度幅度，计算的是数学意义上的梯度
   // for (int i = 0;i < len;i ++) {
-  //   LOG("Mag[%d] = %f, %f", i, Mag[i],sqrt(X[i] * X[i] + Y[i] * Y[i]));
+  //   LOG(INFO,"Mag[%d] = %f, %f", i, Mag[i],sqrt(X[i] * X[i] + Y[i] * Y[i]));
   // }
 
   //遍历邻域的像素
@@ -1151,7 +1151,7 @@ void mySift::find_scale_space_extrema(const vector<vector<Mat>> &dog_pyr,
         }
       }
     }
-    LOG("numKeys : %d", numKeys);
+    LOG(INFO,"numKeys : %d", numKeys);
   }
 
   // cout << "初始满足要求特征点个数是: " << numKeys << endl;
@@ -1296,8 +1296,8 @@ void mySift::find_scale_space_extrema1(const vector<vector<Mat>> &dog_pyr,
 
                 // kpt.angle = (360.f / n) * bin;			//原始
                 // SIFT 算子使用的特征点的主方向0-360度
-                LOG("[%d %d %d]",i,left,right);
-                LOG("point[%f,%f] angle: %f", kpt.pt.x, kpt.pt.y, kpt.angle);
+                LOG(INFO,"[%d %d %d]",i,left,right);
+                LOG(INFO,"point[%f,%f] angle: %f", kpt.pt.x, kpt.pt.y, kpt.angle);
                 keypoints.push_back(kpt); //保存该特征点
               }
             }

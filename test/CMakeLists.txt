@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.0.0)
 
 # set
-set(CMAKE_BUILD_TYPE "Release") # Debug/Release
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin)
 
 # find opencv
@@ -27,6 +25,8 @@ add_executable(img_morphology img_morphology.cc)
 add_executable(img_opt img_opt.cc)
 add_executable(img_sift img_sift.cc)
 add_executable(kdtree_test kdtree_test.cc)
+add_executable(opencv_sift opencv_sift.cc)
+add_executable(img_detection_keypoint img_detection_keypoint.cc)
 
 target_link_libraries(mat_test ${OpenCV_LIBS})
 target_link_libraries(gl_test ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
@@ -47,3 +47,11 @@ target_link_libraries(img_sift sift)
 target_link_libraries(img_sift image_operator)
 target_link_libraries(img_sift unit)
 target_link_libraries(img_sift match)
+
+target_link_libraries(img_detection_keypoint sift)
+target_link_libraries(img_detection_keypoint unit)
+target_link_libraries(img_detection_keypoint image_operator)
+
+target_link_libraries(opencv_sift ${OpenCV_LIBS})
+target_link_libraries(opencv_sift unit)
+target_link_libraries(opencv_sift image_operator)

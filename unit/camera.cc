@@ -9,7 +9,7 @@ Camera::Camera() {
 }
 Eigen::Vector2d Camera::ProjectPoint2Img(const Eigen::Vector3d &point_3d,
                                          const bool point_in_world) {
-  LOG("point_3d : (%.2lf,%.2lf,%.2lf)", point_3d[0], point_3d[1], point_3d[2]);
+  LOG(INFO,"point_3d : (%.2lf,%.2lf,%.2lf)", point_3d[0], point_3d[1], point_3d[2]);
   Eigen::Vector3d camera_point = point_3d;
   if (point_in_world) {
     // 将点转到camear坐标系
@@ -40,7 +40,7 @@ Eigen::Vector2d Camera::ProjectPoint2Img(const Eigen::Vector3d &point_3d,
 
   // 加上相机中心的偏移
   point += center_;
-  LOG("point : (%.2lf,%.2lf)", point[0], point[1]);
+  LOG(INFO,"point : (%.2lf,%.2lf)", point[0], point[1]);
   return point;
 }
 Eigen::Matrix4d Camera::PoseWorld2Camera() {

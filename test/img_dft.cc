@@ -3,7 +3,6 @@
 #include <iostream>
 #include <time.h>
 
-
 using namespace MY_IMG;
 
 int main(int argc, char **argv) {
@@ -19,19 +18,19 @@ int main(int argc, char **argv) {
 
   cv::Mat gray_img;
   Rgb2Gray(img, gray_img);
-  cv::Mat dft_img_abs,idft_img;
+  cv::Mat dft_img_abs, idft_img;
   // cv::imshow("gray_img", gray_img);
   /*
   time_t t1,t2;
   cv::Mat fft_img;
- 
 
-  LOG("size : [%d %d]", gray_img.cols, gray_img.rows);
+
+  LOG(INFO,"size : [%d %d]", gray_img.cols, gray_img.rows);
   t1 = clock();
   FFT2D(gray_img, fft_img);
   t2 = clock();
-  LOG("size : [%d %d]", fft_img.cols, fft_img.rows);
-  LOG("FFT time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
+  LOG(INFO,"size : [%d %d]", fft_img.cols, fft_img.rows);
+  LOG(INFO,"FFT time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
   // show
   dft_img_abs = ConvertComplexMat2doubleMat(fft_img);
   // std::cout << dft_img_abs << std::endl;
@@ -55,8 +54,8 @@ int main(int argc, char **argv) {
   t1 = clock();
   IFFT2D(butter_img_low, butter_low_img);
   t2 = clock();
-  LOG("size: %d, %d", butter_low_img.rows, butter_low_img.cols);
-  LOG("Butterworth low pass time: %f", static_cast<double>(t2 - t1) /
+  LOG(INFO,"size: %d, %d", butter_low_img.rows, butter_low_img.cols);
+  LOG(INFO,"Butterworth low pass time: %f", static_cast<double>(t2 - t1) /
   CLOCKS_PER_SEC); butter_low_img =
   butter_low_img(cv::Range(0,gray_img.rows),cv::Range(0,gray_img.cols));
 

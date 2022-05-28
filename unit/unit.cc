@@ -263,7 +263,7 @@ void ImgFilter(const IMG_Mat &img, const IMG_Mat &filter, IMG_Mat &dimg,
   const int type_size = CV_MAT_CN(type);
   const int type_code = CV_MAT_DEPTH(type);
 
-  LOG("type_size: %d type_code: %d", type_size, type_code);
+  LOG(INFO,"type_size: %d type_code: %d", type_size, type_code);
 
   // 分配内存
   IMG_Mat temp_img[type_size];
@@ -312,8 +312,8 @@ ConvertMat2Eigen(const IMG_Mat &img) {
       result(i, j) = img.at<std::complex<double>>(i, j);
     }
   }
-  // LOG("Eigen: (%ld,%ld)", result.rows(), result.cols());
-  // LOG("Mat: (%d,%d)", img.rows, img.cols);
+  // LOG(INFO,"Eigen: (%ld,%ld)", result.rows(), result.cols());
+  // LOG(INFO,"Mat: (%d,%d)", img.rows, img.cols);
   return result;
 }
 IMG_Mat ConvertEigen2Mat(
@@ -422,7 +422,7 @@ void _fft2D(const IMG_Mat &img, IMG_Mat &dft_img, const bool &is_fft) {
   // for (int i = 0;i < lim_width;i++) {
   //   tmp[i] = std::complex<double>(0, 0);
   // }
-  // LOG("width : %d,size : %ld", width, tmp.size());
+  // LOG(INFO,"width : %d,size : %ld", width, tmp.size());
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
       tmp[j] = img.at<std::complex<double>>(i, j);
@@ -441,7 +441,7 @@ void _fft2D(const IMG_Mat &img, IMG_Mat &dft_img, const bool &is_fft) {
     }
   }
   tmp.reset(new std::complex<double>[lim_height]());
-  // LOG("height : %d,size : %ld", height, tmp.size());
+  // LOG(INFO,"height : %d,size : %ld", height, tmp.size());
   for (int j = 0; j < lim_width; j++) {
     for (int i = 0; i < lim_height; i++) {
       tmp[i] = dft_img.at<std::complex<double>>(i, j);
@@ -489,7 +489,7 @@ void IFFT2D(const IMG_Mat &img, IMG_Mat &dft_img) {
 void DFT(const IMG_Mat &img, IMG_Mat &dft_img) {
   // 将图像转换为复数矩阵
   IMG_Mat temp_img = ConvertSingleChannelMat2ComplexMat<uint8_t>(img);
-  // LOG("temp_img size(fftshift): (%ld,%ld)", temp_img.rows, temp_img.cols);
+  // LOG(INFO,"temp_img size(fftshift): (%ld,%ld)", temp_img.rows, temp_img.cols);
   Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>
       eigen_img = ConvertMat2Eigen(temp_img);
   _fftShift(eigen_img);
@@ -499,7 +499,7 @@ void DFT(const IMG_Mat &img, IMG_Mat &dft_img) {
   });
   // 转换为IMG_Mat
   dft_img = ConvertEigen2Mat(dft_mat);
-  // LOG("dft_img size: (%d,%d)", dft_img.rows, dft_img.cols);
+  // LOG(INFO,"dft_img size: (%d,%d)", dft_img.rows, dft_img.cols);
   temp_img.release();
 }
 

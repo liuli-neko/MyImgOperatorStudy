@@ -4,8 +4,8 @@
 #include <complex>
 #include <functional>
 #include <iostream>
-#include <vector>
 #include <memory>
+#include <vector>
 
 // Eigen
 #include <Eigen/Core>
@@ -19,21 +19,45 @@ using IMG_Mat = cv::Mat;
 
 #ifndef IMG_OPERATOR_UNIT_ALL_H_
 #define IMG_OPERATOR_UNIT_ALL_H_
+
 namespace MY_IMG {
 #ifdef DEBUG
 // LOG
-#define LOG(format, ...)                                                       \
-  printf("[%s:%d] " format "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#define LOG_DEBUG(fmt, ...)                                                    \
+  printf("\033[32m DEBUG\033[0m [%s:%d] \033[1m" fmt "\n\033[0m", __FILE__,    \
+         __LINE__, ##__VA_ARGS__)
 
+#define LOG_INFO(fmt, ...)                                                     \
+  printf("\033[37m INFO\033[0m [%s:%d] \033[1m" fmt "\n\033[0m", __FILE__,     \
+         __LINE__, ##__VA_ARGS__)
+
+#define LOG_WARN(fmt, ...)                                                     \
+  printf("\033[33m WARN\033[0m [%s:%d] \033[1m" fmt "\n\033[0m", __FILE__,     \
+         __LINE__, ##__VA_ARGS__)
+
+#define LOG_ERROR(fmt, ...)                                                    \
+  printf("\033[31m ERROR\033[0m [%s:%d] \033[1m" fmt "\n\033[0m", __FILE__,    \
+         __LINE__, ##__VA_ARGS__);                                             \
+  exit(1)
+
+#define LOG_FATAL(fmt, ...)                                                    \
+  printf("\033[31m FATAL\033[0m [%s:%d] \033[1m" fmt "\n\033[0m", __FILE__,    \
+         __LINE__, ##__VA_ARGS__);                                             \
+  exit(1)
+#define LOG(LEVEL, format, ...) LOG_##LEVEL(format, ##__VA_ARGS__)
 #define ASSERT(booleam, format, ...)                                           \
   if (!(booleam)) {                                                            \
-    LOG(format, ##__VA_ARGS__);                                                \
-    exit(1);                                                                   \
+    LOG(ERROR, format, ##__VA_ARGS__);                                         \
   }                                                                            \
   void(0)
-#endif
-#ifndef DEBUG
-#define LOG(format, ...) void(0)
+#define TEST(x) x
+#else
+#define LOG_DEBUG(fmt, ...) void(0)
+#define LOG_INFO(fmt, ...) void(0)
+#define LOG_WARN(fmt, ...) void(0)
+#define LOG_ERROR(fmt, ...) void(0)
+#define LOG_FATAL(fmt, ...) void(0)
+#define LOG(LEVEL, format, ...) void(0)
 #define ASSERT(booleam, format, ...) void(0)
 #endif
 #define sqr(x) ((x) * (x))
@@ -74,9 +98,7 @@ struct KeyPoint {
     return x < p.x;
   }
   bool operator==(const KeyPoint &p) const { return x == p.x && y == p.y; }
-  float operator[](const int &index) const {
-    return descriptor.at(index);
-  }
+  float operator[](const int &index) const { return descriptor.at(index); }
 };
 // 定义用于保存原始图片的结构体
 struct Image {

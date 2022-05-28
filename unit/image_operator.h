@@ -22,6 +22,8 @@ void ImageChange(const IMG_Mat &img, IMG_Mat &img_out, const double &zoom = 2,
                  const double &angle = 0);
 void DrawPoints(const IMG_Mat &img, const std::vector<std::shared_ptr<KeyPoint>> &keypoints,
                 IMG_Mat &img_out);
+void DrayPoints(const IMG_Mat &img, const std::vector<cv::KeyPoint> &keypoints,
+                IMG_Mat &img_out);
 void DrawMatch(const IMG_Mat &img1, const IMG_Mat &img2,
                const std::vector<std::pair<std::shared_ptr<KeyPoint>,
                                            std::shared_ptr<KeyPoint>>>

@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
   t1 = clock();
   GaussBlur(img, blur_img, sigma);
   t2 = clock();
-  LOG("ImgFilter time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
+  LOG(INFO,"ImgFilter time: %f", static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
   cv::imshow("blur_img", blur_img);
   cv::imwrite(output_name, blur_img);
 

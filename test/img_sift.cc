@@ -22,11 +22,11 @@ int main(int argc, char const *argv[]) {
   time(&start);
   MY_IMG::SIFT(src_img1);
   time(&end);
-  LOG("SIFT use time: %f", difftime(end, start));
+  LOG(INFO,"SIFT use time: %f", difftime(end, start));
   time(&start);
   MY_IMG::SIFT(src_img2);
   time(&end);
-  LOG("SIFT use time: %f", difftime(end, start));
+  LOG(INFO,"SIFT use time: %f", difftime(end, start));
   // 去个重？
   std::sort(src_img1.keypoints.begin(), src_img1.keypoints.end());
   src_img1.keypoints.erase(
@@ -44,7 +44,7 @@ int main(int argc, char const *argv[]) {
       match_result;
   MY_IMG::Match(tree1, tree2, match_result);
   for (auto &kp : match_result) {
-    LOG("(%d %d)-(%d %d)", kp.first->x, kp.first->y, kp.second->x,
+    LOG(INFO,"(%d %d)-(%d %d)", kp.first->x, kp.first->y, kp.second->x,
         kp.second->y);
   }
 
