@@ -20,7 +20,7 @@ void _init_sigmas(const SiftParam &param, std::vector<double> &sigmas) {
     // sig.push_back(curr_sig);
   }
   for (auto &s : sigmas) {
-    LOG(INFO,"sigma : %lf", s);
+    LOG(INFO, "sigma : %lf", s);
   }
 }
 void _init_first_img(const Image &src, const SiftParam &param, IMG_Mat &img) {
@@ -63,6 +63,10 @@ void _init_octave_gauss_pyramid(Image &src, const SiftParam &param,
                                 std::vector<Octave> &Octaves) {
   int num_octaves = param.num_octave;
   int num_octave_layers = param.num_octave_layers + 3;
+  Octaves.resize(num_octaves);
+  for (int i = 0; i < num_octaves;i ++ ) {
+    Octaves[i].layers.resize(num_octave_layers);
+  }
 
   for (int i = 0; i < num_octaves; i++) {
     for (int j = 0; j < num_octave_layers; j++) {
@@ -354,7 +358,8 @@ float _calc_orientation_hist(const IMG_Mat &img, const SiftParam &param,
 void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
                       const SiftParam &param) {
   // -----------------------检测极值点--------------------------------
-  LOG(INFO,"-----------------------检测极值点--------------------------------");
+  LOG(INFO,
+      "-----------------------检测极值点--------------------------------");
   float threshold = param.contrast_threshold / param.num_octave_layers;
   const int n = param.ori_hist_bins;
   std::vector<std::shared_ptr<KeyPoint>> kpt;
@@ -456,8 +461,8 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
         }
       }
     }
-    LOG(INFO,"numKeys = %d", numKeys);
-    LOG(INFO,"detect point size : %ld", kpt.size());
+    LOG(INFO, "numKeys = %d", numKeys);
+    LOG(INFO, "detect point size : %ld", kpt.size());
     for (auto p : kpt) {
       src.keypoints.push_back(p);
     }
@@ -466,17 +471,17 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
 
 void image_pyramid_create_self(Image &src, const SiftParam &param,
                                std::vector<Octave> &octaves) {
-  LOG(INFO,"初始化第一张图像");
+  LOG(INFO, "初始化第一张图像");
   IMG_Mat init_img;
   _init_first_img(src, param, init_img);
   std::vector<double> sigmas;
-  LOG(INFO,"生成高斯模糊系数");
+  LOG(INFO, "生成高斯模糊系数");
   _init_sigmas(param, sigmas);
-  LOG(INFO,"生成图像金字塔");
+  LOG(INFO, "生成图像金字塔");
   _init_octave_gauss_pyramid(src, param, sigmas, init_img, octaves);
-  LOG(INFO,"生成差分图像");
+  LOG(INFO, "生成差分图像");
   _init_dog_pyramid(src, octaves, param);
-  LOG(INFO,"图像金字塔初始化完成");
+  LOG(INFO, "图像金字塔初始化完成");
 
   init_img.release();
   sigmas.clear();
@@ -552,6 +557,7 @@ void image_pyramid_create_opencv(Image &src, const SiftParam &param,
         cv::GaussianBlur(octaves[i].layers[j - 1], octaves[i].layers[j],
                          kernel_size, sig[j], sig[j]);
       }
+     
     }
   }
 
@@ -565,15 +571,10 @@ void image_pyramid_create_opencv(Image &src, const SiftParam &param,
 
 void FeatureExtraction(Image &src, const SiftParam &param) {
   std::vector<Octave> octaves;
-  octaves.resize(param.num_octave);
-  for (int i = 0; i < param.num_octave; i++) {
-    octaves[i].layers.resize(param.num_octave_layers + 3);
-    octaves[i].dog_layers.resize(param.num_octave_layers + 2);
-  }
   // -----------------------初始化图像金字塔--------------------------------
   image_pyramid_create_opencv(src, param, octaves);
   // -----------------------获取关键点--------------------------------
-  LOG(INFO,"检测关键点");
+  LOG(INFO, "检测关键点");
   _detect_keypoint(src, octaves, param);
   // 如果设置了特征点个数限制，则进行剪裁
   if (param.max_features != 0 && src.keypoints.size() > param.max_features) {
@@ -588,35 +589,20 @@ void FeatureExtraction(Image &src, const SiftParam &param) {
   }
   // show
 #ifdef DEBUG
-  LOG(INFO,"keypoints size:%ld", src.keypoints.size());
-  // int _o = 1;
-  // IMG_Mat tmp = IMG_Mat(octaves[_o].layers[0].size(), CV_8U);
-  // for (int i = 0; i < param.num_octave_layers + 3; i++) {
-  //   ConvertTo<float, uint8_t>(octaves[_o].layers[i], tmp,
-  //                             [](const float &pixe) -> uint8_t {
-  //                               return static_cast<uint8_t>(pixe * 255);
-  //                             });
-  //   cv::imshow("octave-" + std::to_string(_o) + "-layer-" +
-  //   std::to_string(i),
-  //              tmp);
-  // }
-  // for (int i = 0; i < param.num_octave_layers + 2; i++) {
-  //   ConvertTo<float, uint8_t>(
-  //       octaves[_o].dog_layers[i], tmp,
-  //       [](const float &pixe) -> uint8_t { return pixe * 255; });
-  //   cv::imshow("octave-" + std::to_string(_o) + "-dog-" + std::to_string(i),
-  //              tmp);
-  // }
-  // tmp.release();
-
-  // DrawPoints(src.img, src.keypoints, tmp);
-  // cv::imshow("keypoints", tmp);
-  // cv::imwrite("./keypoints_img.png", tmp);
-  // cv::waitKey(0);
-  // tmp.release();
+  LOG(INFO, "keypoints size:%ld", src.keypoints.size());
+  int _o = 1;
+  for (int i = 0; i < param.num_octave_layers + 3; i++) {
+    cv::imshow("octave-" + std::to_string(_o) + "-layer-" + std::to_string(i),
+               octaves[_o].layers[i]);
+  }
+  for (int i = 0; i < param.num_octave_layers + 2; i++) {
+    cv::imshow("octave-" + std::to_string(_o) + "-dog-" + std::to_string(i),
+               octaves[_o].dog_layers[i] * 255);
+  }
+  cv::waitKey(0);
 #endif
   // -----------------------释放图像金字塔内存--------------------------------
-  LOG(INFO,"释放图像金字塔内存");
+  LOG(INFO, "释放图像金字塔内存");
   for (int i = 0; i < param.num_octave; i++) {
     for (int j = 0; j < param.num_octave_layers + 3; j++) {
       octaves.at(i).layers[j].release();
@@ -628,12 +614,12 @@ void FeatureExtraction(Image &src, const SiftParam &param) {
     octaves.at(i).dog_layers.clear();
   }
   octaves.clear();
-  LOG(INFO,"释放图像金字塔内存完成");
+  LOG(INFO, "释放图像金字塔内存完成");
 }
 
 void SIFT(Image &src) {
   // -----------------------初始化参数--------------------------------
-  LOG(INFO,"初始化sift参数");
+  LOG(INFO, "初始化sift参数");
   SiftParam param;
   param.num_octave =
       std::min(static_cast<int>(log2(std::min(src.img.rows, src.img.cols))) - 3,
