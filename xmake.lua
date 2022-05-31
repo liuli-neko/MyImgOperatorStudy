@@ -134,3 +134,15 @@ target("kdtree_test")
     if is_mode("debug") then 
         add_defines("DEBUG")
     end
+
+target("img_detection_keypoint")
+    add_includedirs("unit/")
+    add_packages("opencv")
+    add_packages("libjpeg")
+    add_packages("libpng")
+    add_packages("libwebp")
+    add_files("unit/*.cc")
+    add_files("test/img_detection_keypoint.cc")
+    if is_mode("debug") then 
+        add_defines("DEBUG")
+    end

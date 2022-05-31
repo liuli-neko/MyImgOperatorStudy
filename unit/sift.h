@@ -31,7 +31,7 @@ struct SiftParam {
   int descr_hist_bins = 8; // 描述子直方图方向的维度
   float descr_mag_thr = 0.2; // 描述子幅度阈值
   float descr_scl_fctr = 3.0; // 描述子网格大小
-  int sift_fixpt_scale = 48; 
+  int sift_fixpt_scale = 1; 
 };
 
 /** @brief 特征提取和描述子生成

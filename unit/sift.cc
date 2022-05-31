@@ -129,31 +129,32 @@ bool _adjust_local_extrema(Image &src, const std::vector<Octave> &Octaves,
            "row: %d, col: %d", row, col);
     // 获取特征点的一阶偏导
     float dx =
-        (img.at<float>(row, col + 1) - img.at<float>(row, col - 1)) / 2.0;
+        (img.at<float>(row, col + 1) - img.at<float>(row, col - 1)) * deriv_scale;
     float dy =
-        (img.at<float>(row + 1, col) - img.at<float>(row - 1, col)) / 2.0;
-    float dz = (nex.at<float>(row, col) - pre.at<float>(row, col)) / 2.0;
+        (img.at<float>(row + 1, col) - img.at<float>(row - 1, col)) * deriv_scale;
+    float dz = (nex.at<float>(row, col) - pre.at<float>(row, col)) * deriv_scale;
 
     // 获取特征点的二阶偏导
-    float v2 = img.at<float>(row, col);
+    float v2 = img.at<float>(row, col) * 2;
     float dxx =
-        (img.at<float>(row, col + 1) + img.at<float>(row, col - 1) - 2 * v2);
+        (img.at<float>(row, col + 1) + img.at<float>(row, col - 1) - v2) * second_deriv_scale;
     float dyy =
-        (img.at<float>(row + 1, col) + img.at<float>(row - 1, col) - 2 * v2);
-    float dzz = pre.at<float>(row, col) + nex.at<float>(row, col) - 2 * v2;
+        (img.at<float>(row + 1, col) + img.at<float>(row - 1, col) - v2) * second_deriv_scale;
+    float dzz = (pre.at<float>(row, col) + nex.at<float>(row, col) - v2) * second_deriv_scale;
 
     // 获取特征点二阶混合偏导
     float dxy =
-        (img.at<float>(row + 1, col + 1) + img.at<float>(row - 1, col - 1) -
-         img.at<float>(row + 1, col - 1) - img.at<float>(row - 1, col + 1)) /
-        4.0;
+                (img.at<float>(row + 1, col + 1) + img.at<float>(row - 1, col - 1) -
+                img.at<float>(row + 1, col - 1) - img.at<float>(row - 1, col + 1)) *
+                second_deriv_scale;
     float dxz = (nex.at<float>(row, col + 1) + pre.at<float>(row, col - 1) -
-                 nex.at<float>(row, col - 1) - pre.at<float>(row, col + 1)) /
-                4.0;
+                 nex.at<float>(row, col - 1) - pre.at<float>(row, col + 1)) *
+                 second_deriv_scale;
     float dyz = (nex.at<float>(row + 1, col) + pre.at<float>(row - 1, col) -
-                 nex.at<float>(row - 1, col) - pre.at<float>(row + 1, col)) /
-                4.0;
+                 nex.at<float>(row - 1, col) - pre.at<float>(row + 1, col)) *
+                 second_deriv_scale;
 
+/* 不是求特征值？
     Eigen::Matrix3d H;
     H << dxx, dxy, dxz, dxy, dyy, dyz, dxz, dyz, dzz;
 
@@ -163,13 +164,18 @@ bool _adjust_local_extrema(Image &src, const std::vector<Octave> &Octaves,
     Eigen::Vector3d X;
     // 利用SVD分解H矩阵得到特征点的最大值
     X = H.colPivHouseholderQr().solve(dD);
+*/
+    cv::Vec3f dD(dx, dy, dz);
+    cv::Matx33f H(dxx, dxy, dxz, dxy, dyy, dyz, dxz, dyz, dzz);
+
+    cv::Vec3f X = H.solve(dD, cv::DECOMP_LU);
 
     xc = -X[0];
     xr = -X[1];
     xi = -X[2];
 
     // 如果三个方向偏移量都很小,则认为该点是准确的
-    if (abs(xc) < 0.5 && abs(xr) < 0.5 && abs(xi) < 0.5) {
+    if (abs(xc) < 0.5f && abs(xr) < 0.5f && abs(xi) < 0.5f) {
       break;
     }
 
@@ -192,7 +198,7 @@ bool _adjust_local_extrema(Image &src, const std::vector<Octave> &Octaves,
     }
   }
   // 如果最后也没找到合适的点,则认为该点是错误的
-  if (i >= param.max_interp_steps - 1) {
+  if (i >= param.max_interp_steps) {
     return false;
   }
 
@@ -208,14 +214,13 @@ bool _adjust_local_extrema(Image &src, const std::vector<Octave> &Octaves,
       (img.at<float>(row + 1, col) - img.at<float>(row - 1, col)) * deriv_scale;
   float dz = (nex.at<float>(row, col) - pre.at<float>(row, col)) * deriv_scale;
 
-  Eigen::Vector3f dD;
-  dD << dx, dy, dz;
+  cv::Matx31f dD(dx, dy, dz);
 
-  float t = dD.dot(Eigen::Vector3f(xc, xr, xi));
+  float t = dD.dot(cv::Matx31f(xc, xr, xi));
 
   float contr = img.at<float>(row, col) + t * 0.5f;
 
-  if (std::abs(contr) < param.contrast_threshold / param.num_octave_layers) {
+  if (std::abs(contr) * param.num_octave_layers < param.contrast_threshold) {
     return false;
   }
 
@@ -381,80 +386,118 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
 
       for (int x = param.img_border; x < num_row - param.img_border; x++) {
         for (int y = param.img_border; y < num_col - param.img_border; y++) {
-          bool min_x = true, max_x = true;
-          float val = curr_img.at<float>(x, y);
 
-          if (!(std::abs(val) > threshold)) {
-            min_x = false;
-            max_x = false;
+          float val = curr_img.at<float>(x, y);
+          float _00,_01,_02;
+          float _10,    _12;
+          float _20,_21,_22;
+
+          float min_val,max_val;
+          
+          bool cond = std::abs(val) > threshold; 
+          if (!(cond)) {
             continue;
           }
 
           // 检测极值点
-          for (int k = 0; k < 9; k++) {
-            ASSERT(x + dx[k] >= 0 && x + dx[k] < num_row && y + dy[k] >= 0 &&
-                       y + dy[k] < num_col,
-                   "检测极值点(%d,%d)时，超出图像边界(%d,%d)", x, y, x + dx[k],
-                   y + dy[k]);
-            if ((val > prev_img.at<float>(x + dx[k], y + dy[k])) ||
-                (val > next_img.at<float>(x + dx[k], y + dy[k])) ||
-                (val > curr_img.at<float>(x + dx[k], y + dy[k]))) {
-              min_x = false;
-            }
-            if ((val < prev_img.at<float>(x + dx[k], y + dy[k])) ||
-                (val < next_img.at<float>(x + dx[k], y + dy[k])) ||
-                (val < curr_img.at<float>(x + dx[k], y + dy[k]))) {
-              max_x = false;
-            }
+          _00 = curr_img.at<float>(x - 1, y - 1);_01 = curr_img.at<float>(x - 1, y);_02 = curr_img.at<float>(x - 1, y + 1);
+          _10 = curr_img.at<float>(x, y - 1);                                       _12 = curr_img.at<float>(x, y + 1);
+          _20 = curr_img.at<float>(x + 1, y - 1);_21 = curr_img.at<float>(x + 1, y);_22 = curr_img.at<float>(x + 1, y + 1);       
+
+          min_val = std::min({_00,_01,_02,_10,_12,_20,_21,_22});
+          max_val = std::max({_00,_01,_02,_10,_12,_20,_21,_22});
+
+          bool condp = cond & (val > 0) & (val >= max_val);
+          bool condn = cond & (val < 0) & (val <= min_val);
+
+          cond = condp | condn;
+
+          if (!cond) {
+            continue;
           }
-          if (min_x || max_x) {
-            numKeys++;
-            // 检测极值点
-            std::shared_ptr<KeyPoint> kp(new KeyPoint);
-            int octave = i, layer = j, r1 = x, c1 = y;
-            if (_adjust_local_extrema(src, Octaves, param, kp, octave, layer,
-                                      r1, c1)) {
-              // ASSERT(kp.x == r1 && kp.y == c1,"kp(%d %d) != (%d %d)", kp.x,
-              // kp.y, r1, c1);
 
-              float scale = kp->size / float(1 << octave);
+          _00 = prev_img.at<float>(x - 1, y - 1);_01 = prev_img.at<float>(x - 1, y);_02 = prev_img.at<float>(x - 1, y + 1);
+          _10 = prev_img.at<float>(x, y - 1);                                       _12 = prev_img.at<float>(x, y + 1); 
+          _20 = prev_img.at<float>(x + 1, y - 1);_21 = prev_img.at<float>(x + 1, y);_22 = prev_img.at<float>(x + 1, y + 1);
 
-              // 计算关键点的主方向
-              float max_hist = _calc_orientation_hist(
-                  Octaves[octave].layers[layer], param, kp, scale, n);
+          min_val = std::min({_00,_01,_02,_10,_12,_20,_21,_22});
+          max_val = std::max({_00,_01,_02,_10,_12,_20,_21,_22});
 
-              float sum = 0.0;
-              float mag_thr = 0.0;
+          condp = (val >= max_val);
+          condn = (val <= min_val);
 
-              for (int i = 0; i < n; i++) {
-                sum += kp->descriptor[i];
-              }
-              mag_thr = 0.5 * (1.0 / 36) * sum;
+          cond = condp | condn;
+          if (!cond) {
+            continue;
+          }
 
-              // 遍历所有bin
-              for (int i = 0; i < n; i++) {
-                int left = i > 0 ? i - 1 : n - 1;
-                int right = i < n - 1 ? i + 1 : 0;
+          float _11p = prev_img.at<float>(x, y);
+          float _11n = next_img.at<float>(x, y);
 
-                //创建新的特征点，大于主峰的80%
-                if (kp->descriptor[i] > kp->descriptor[left] &&
-                    kp->descriptor[i] > kp->descriptor[right] &&
-                    kp->descriptor[i] >= mag_thr) {
-                  float bin =
-                      i + 0.5f *
-                              (kp->descriptor[left] - kp->descriptor[right]) /
-                              (kp->descriptor[left] + kp->descriptor[right] -
-                               2 * kp->descriptor[i]);
-                  bin = bin < 0 ? n + bin : bin >= n ? bin - n : bin;
-                  // 对主方向做一个细化
-                  float angle = (360.0f / n) * bin;
-                  if (angle >= 1 && angle <= 180) {
-                    kp->angle = angle;
-                  } else if (angle > 180 && angle <= 360) {
-                    kp->angle = 360 - angle;
-                  }
-                  kpt.push_back(kp);
+          float max_middle = std::max({_11p,_11n});
+          float min_middle = std::min({_11p,_11n});
+
+          _00 = next_img.at<float>(x - 1, y - 1);_01 = next_img.at<float>(x - 1, y);_02 = next_img.at<float>(x - 1, y + 1);
+          _10 = next_img.at<float>(x, y - 1);                                       _12 = next_img.at<float>(x, y + 1);
+          _20 = next_img.at<float>(x + 1, y - 1);_21 = next_img.at<float>(x + 1, y);_22 = next_img.at<float>(x + 1, y + 1);
+
+          min_val = std::min({_00,_01,_02,_10,_12,_20,_21,_22});
+          max_val = std::max({_00,_01,_02,_10,_12,_20,_21,_22});
+
+          condp &= (val >= std::max(max_val, max_middle));
+          condn &= (val <= std::min(min_val, min_middle));
+
+          cond = condp | condn;
+          if (!cond) {
+            continue;
+          }
+
+          numKeys++;
+          // 检测极值点
+          std::shared_ptr<KeyPoint> kp(new KeyPoint);
+          int octave = i, layer = j, r1 = x, c1 = y;
+          if (_adjust_local_extrema(src, Octaves, param, kp, octave, layer,
+                                    r1, c1)) {
+            // ASSERT(kp.x == r1 && kp.y == c1,"kp(%d %d) != (%d %d)", kp.x,
+            // kp.y, r1, c1);
+
+            float scale = kp->size / float(1 << octave);
+
+            // 计算关键点的主方向
+            float max_hist = _calc_orientation_hist(
+                Octaves[octave].layers[layer], param, kp, scale, n);
+
+            float sum = 0.0;
+            float mag_thr = 0.0;
+
+            for (int i = 0; i < n; i++) {
+              sum += kp->descriptor[i];
+            }
+            mag_thr = 0.5 * (1.0 / 36) * sum;
+
+            // 遍历所有bin
+            for (int i = 0; i < n; i++) {
+              int left = i > 0 ? i - 1 : n - 1;
+              int right = i < n - 1 ? i + 1 : 0;
+
+              //创建新的特征点，大于主峰的80%
+              if (kp->descriptor[i] > kp->descriptor[left] &&
+                  kp->descriptor[i] > kp->descriptor[right] &&
+                  kp->descriptor[i] >= mag_thr) {
+                float bin =
+                    i + 0.5f *
+                            (kp->descriptor[left] - kp->descriptor[right]) /
+                            (kp->descriptor[left] + kp->descriptor[right] -
+                              2 * kp->descriptor[i]);
+                bin = bin < 0 ? n + bin : bin >= n ? bin - n : bin;
+                // 对主方向做一个细化
+                float angle = (360.0f / n) * bin;
+                if (angle >= 1 && angle <= 180) {
+                  kp->angle = angle;
+                } else if (angle > 180 && angle <= 360) {
+                  kp->angle = 360 - angle;
                 }
+                kpt.push_back(kp);
               }
             }
           }
