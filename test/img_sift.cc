@@ -43,10 +43,6 @@ int main(int argc, char const *argv[]) {
                         std::shared_ptr<MY_IMG::KeyPoint>>>
       match_result;
   MY_IMG::Match(tree1, tree2, match_result);
-  for (auto &kp : match_result) {
-    LOG(INFO,"(%d %d)-(%d %d)", kp.first->x, kp.first->y, kp.second->x,
-        kp.second->y);
-  }
 
   IMG_Mat src_out1, src_out2;
   MY_IMG::DrawPoints(src_img1.img, src_img1.keypoints, src_out1);

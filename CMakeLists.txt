@@ -3,7 +3,7 @@ project(IMG_OPERATOR VERSION 0.1.0)
 
 # set
 # -fsanitize=address
-set(CMAKE_BUILD_TYPE "Release") # Debug/Release
+set(CMAKE_BUILD_TYPE "Debug") # Debug/Release
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fsanitize=address")
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin)
 

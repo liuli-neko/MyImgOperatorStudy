@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 	double comput_time_1 = ((double)getTickCount() - comput_1) / getTickFrequency();
  
 	cout << "参考图像特征点描述时间是： " << comput_time_1 << "s" << endl;
- 
+  return 0;
 	/********************** 1、待配准图像特征点检测和描述 **********************/
  
 	vector<vector<Mat>> gauss_pyr_2, dog_pyr_2;

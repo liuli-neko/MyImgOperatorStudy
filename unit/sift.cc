@@ -107,7 +107,7 @@ void _init_dog_pyramid(Image &src, std::vector<Octave> &Octaves,
   }
 }
 bool _adjust_local_extrema(Image &src, const std::vector<Octave> &Octaves,
-                           const SiftParam &param, std::shared_ptr<KeyPoint> kp,
+                           const SiftParam &param, std::shared_ptr<KeyPoint> &kp,
                            int octave, int &layer, int &row, int &col) {
   // -----------------------迭代更新关键点位置-------------------------------
   const float img_scale = 1.0f / (255 * param.sift_fixpt_scale);
@@ -246,11 +246,13 @@ bool _adjust_local_extrema(Image &src, const std::vector<Octave> &Octaves,
   }
 
   // ------------------------------保存特征点-----------------------------------
-  kp->x = ((float)row + xc) * pow(2, octave - param.keep_appearance);
-  kp->y = ((float)col + xr) * pow(2, octave - param.keep_appearance);
+  // LOG(DEBUG,"x : %f, y : %f, layer : %d", col + xc, row + xr, layer);
+  kp->x = ((float)row + xc) * (1 << octave);
+  kp->y = ((float)col + xr) * (1 << octave);
+  // LOG(DEBUG,"kp(%d, %d)", kp->x, kp->y);
 
   // SIFT 描述子
-  kp->octave = octave + (layer << 8) + (int(xi + 0.5) << 16);
+  kp->octave = octave + (layer << 8) + (int((xi + 0.5) * 255) << 16);
   kp->size = param.sigma * powf(2.0f, (layer + xi) / param.num_octave_layers) *
              (1 << octave) * 2;
   kp->response = abs(contr);
@@ -259,9 +261,9 @@ bool _adjust_local_extrema(Image &src, const std::vector<Octave> &Octaves,
 }
 
 float _calc_orientation_hist(const IMG_Mat &img, const SiftParam &param,
-                             std::shared_ptr<KeyPoint> kp, float scale, int n) {
+                             std::shared_ptr<KeyPoint> &kp, float scale, int n) {
   // -----------------------------计算描述子--------------------------------
-  std::vector<float> &hist = kp->descriptor;
+  std::vector<float> &hist = kp->hist;
   hist.resize(n); // 初始化描述子
   int radius = static_cast<int>(param.ori_radius * scale + 0.5);
 
@@ -272,7 +274,7 @@ float _calc_orientation_hist(const IMG_Mat &img, const SiftParam &param,
   float exp_scale = -1.0f / (2 * sigma * sigma);
 
   float *buffer = new float[4 * len + n + 4];
-  float *X = buffer, *Y = buffer + len, *Mag = Y, *Ori = Y + len,
+  float *X = buffer, *Y = buffer + len, *Mag = X, *Ori = Y + len,
         *W = Ori + len;
   float *temp_hist = W + len + 2;
 
@@ -282,13 +284,13 @@ float _calc_orientation_hist(const IMG_Mat &img, const SiftParam &param,
 
   int k = 0;
 
-  for (int i = -radius; i < radius; i++) {
+  for (int i = -radius; i <= radius; i++) {
     int y = kp->y + i;
 
     if (y <= 0 || y >= img.rows - 1) {
       continue;
     }
-    for (int j = -radius; j < radius; j++) {
+    for (int j = -radius; j <= radius; j++) {
       int x = kp->x + j;
 
       if (x <= 0 || x >= img.cols - 1) {
@@ -296,7 +298,7 @@ float _calc_orientation_hist(const IMG_Mat &img, const SiftParam &param,
       }
 
       float dx = img.at<float>(y, x + 1) - img.at<float>(y, x - 1);
-      float dy = img.at<float>(y + 1, x) - img.at<float>(y - 1, x);
+      float dy = img.at<float>(y - 1, x) - img.at<float>(y + 1, x);
 
       X[k] = dx;
       Y[k] = dy;
@@ -310,17 +312,20 @@ float _calc_orientation_hist(const IMG_Mat &img, const SiftParam &param,
 
   for (int i = 0; i < len; i++) {
     // 计算领域内的所有像素的高斯权重
-    W[i] = std::exp(W[i]);
+    W[i] = cv::exp(W[i]);
   }
 
   for (int i = 0; i < len; i++) {
     // 计算领域内所有像素的梯度方向
     Ori[i] = cv::fastAtan2(Y[i], X[i]);
   }
-
-  for (int i = 0; i < len; i++) {
-    // 计算领域内的所有像素的幅度
-    Mag[i] = std::sqrt(sqr(X[i]) + sqr(Y[i]));
+  cv::Mat _X = cv::Mat(1, len, CV_32F, X);
+  cv::Mat _Y = cv::Mat(1, len, CV_32F, Y);
+  cv::Mat _W = cv::Mat(1, len, CV_32F, W);
+  // 计算领域内的所有像素的幅度
+  cv::magnitude(_X, _Y, _W);
+  for (int i = 0;i < len;i ++) {
+    Mag[i] = _W.at<float>(0, i);
   }
 
   // 遍历领域的像素
@@ -352,9 +357,7 @@ float _calc_orientation_hist(const IMG_Mat &img, const SiftParam &param,
   // 获取直方图中的最大值
   float max_val = hist[0];
   for (int i = 1; i < n; i++) {
-    if (hist[i] > max_val) {
-      max_val = hist[i];
-    }
+    max_val = std::max(max_val, hist[i]);
   }
   delete[] buffer;
   return max_val;
@@ -365,16 +368,16 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
   // -----------------------检测极值点--------------------------------
   LOG(INFO,
       "-----------------------检测极值点--------------------------------");
-  float threshold = param.contrast_threshold / param.num_octave_layers;
+  int nOctaves = (int)Octaves.size();
+  float threshold = (float)param.contrast_threshold / param.num_octave_layers;
   const int n = param.ori_hist_bins;
-  std::vector<std::shared_ptr<KeyPoint>> kpt;
+  float hist[n];
 
   src.keypoints.clear();
   int dx[] = {-1, 0, 1, -1, 1, -1, 0, 1, 0};
   int dy[] = {-1, -1, -1, 0, 0, 1, 1, 1, 0};
 
   for (int i = 0; i < param.num_octave; i++) {
-    kpt.clear();
     int numKeys = 0;
     for (int j = 1; j <= param.num_octave_layers; j++) {
       const IMG_Mat &curr_img = Octaves[i].dog_layers[j];
@@ -454,26 +457,26 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
 
           numKeys++;
           // 检测极值点
-          std::shared_ptr<KeyPoint> kp(new KeyPoint);
+          std::shared_ptr<KeyPoint> kpt(new KeyPoint);
           int octave = i, layer = j, r1 = x, c1 = y;
-          if (_adjust_local_extrema(src, Octaves, param, kp, octave, layer,
+          if (_adjust_local_extrema(src, Octaves, param, kpt, octave, layer,
                                     r1, c1)) {
             // ASSERT(kp.x == r1 && kp.y == c1,"kp(%d %d) != (%d %d)", kp.x,
             // kp.y, r1, c1);
-
-            float scale = kp->size / float(1 << octave);
+            // LOG(INFO,"kpt(%d %d) != (%d %d)", kpt->x, kpt->y, r1, c1);
+            float scale = (kpt->size * 0.5) / float(1 << octave);
 
             // 计算关键点的主方向
             float max_hist = _calc_orientation_hist(
-                Octaves[octave].layers[layer], param, kp, scale, n);
+                Octaves[octave].layers[layer], param, kpt, scale, n);
 
             float sum = 0.0;
             float mag_thr = 0.0;
 
             for (int i = 0; i < n; i++) {
-              sum += kp->descriptor[i];
+              sum += kpt->hist[i];
             }
-            mag_thr = 0.5 * (1.0 / 36) * sum;
+            mag_thr = (float)(max_hist * param.ori_peak_ratio);
 
             // 遍历所有bin
             for (int i = 0; i < n; i++) {
@@ -481,23 +484,22 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
               int right = i < n - 1 ? i + 1 : 0;
 
               //创建新的特征点，大于主峰的80%
-              if (kp->descriptor[i] > kp->descriptor[left] &&
-                  kp->descriptor[i] > kp->descriptor[right] &&
-                  kp->descriptor[i] >= mag_thr) {
+              if (kpt->hist[i] > kpt->hist[left] &&
+                  kpt->hist[i] > kpt->hist[right] &&
+                  kpt->hist[i] >= mag_thr) {
                 float bin =
                     i + 0.5f *
-                            (kp->descriptor[left] - kp->descriptor[right]) /
-                            (kp->descriptor[left] + kp->descriptor[right] -
-                              2 * kp->descriptor[i]);
+                            (kpt->hist[left] - kpt->hist[right]) /
+                            (kpt->hist[left] + kpt->hist[right] -
+                              2 * kpt->hist[i]);
                 bin = bin < 0 ? n + bin : bin >= n ? bin - n : bin;
                 // 对主方向做一个细化
-                float angle = (360.0f / n) * bin;
-                if (angle >= 1 && angle <= 180) {
-                  kp->angle = angle;
-                } else if (angle > 180 && angle <= 360) {
-                  kp->angle = 360 - angle;
+                float angle =360.0f - (360.0f / n) * bin;
+                if (std::abs(angle - 360.0f) < 1e-7) {
+                  angle = 0.0f;
                 }
-                kpt.push_back(kp);
+                kpt->angle = angle;
+                src.keypoints.push_back(kpt);
               }
             }
           }
@@ -505,10 +507,7 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
       }
     }
     LOG(INFO, "numKeys = %d", numKeys);
-    LOG(INFO, "detect point size : %ld", kpt.size());
-    for (auto p : kpt) {
-      src.keypoints.push_back(p);
-    }
+    LOG(INFO, "detect point size : %ld", src.keypoints.size());
   }
 }
 
@@ -577,7 +576,9 @@ void image_pyramid_create_opencv(Image &src, const SiftParam &param,
     //组内每层的尺度坐标计算公式
     sig.push_back(sqrt(curr_sig * curr_sig - prev_sig * prev_sig));
   }
-
+  for (auto s : sig) {
+    LOG(INFO, "sig = %f", s);
+  }
   octaves.resize(param.num_octave);
 
   for (int i = 0; i < param.num_octave; i++) {
@@ -611,7 +612,214 @@ void image_pyramid_create_opencv(Image &src, const SiftParam &param,
     }
   }
 }
+void _calc_sift_descriptor(const IMG_Mat &gauss_image,const SiftParam &param,float main_angle,
+                           float x,float y,float scale,int d,int n,std::shared_ptr<KeyPoint> &kpt) {
+  int kpt_x = int(x + 0.5);
+  int kpt_y = int(y + 0.5);
 
+  float cos_t = cosf(-main_angle * (float)(M_PI / 180.0));
+  float sin_t = sinf(-main_angle * (float)(M_PI / 180.0));
+
+  float bins_per_rad = n / 360.0f;
+
+  float exp_scale = -1.0f / (d * d * 0.5f);
+
+  float hist_width = param.descr_width * scale;
+
+  int radius = int(hist_width * (d + 1) * sqrt(2) * 0.5f + 0.5);
+
+  int rows = gauss_image.rows;
+  int cols = gauss_image.cols;
+
+  radius = std::min(radius, (int)sqrt((double)rows * rows + cols * cols));
+
+  cos_t = cos_t / hist_width;
+  sin_t = sin_t / hist_width;
+
+  int len = (2 * radius + 1) * (2 * radius + 1);
+
+  int histlen = (d + 2) * (d + 2) * (n + 2);
+
+  float *buf = new float[6*len + histlen];
+  float *X = buf, *Y = buf + len, *Mag = Y,*Angle = Y + len,*W = Angle + len;
+  float *RBin = W + len,*CBin = RBin + len,*hist = CBin + len;
+
+  for (int i = 0;i < d + 2;i ++) {
+    for (int j = 0;j < d + 2;j ++) {
+      for (int k = 0;k < n + 2;k ++) {
+        hist[(i * (d + 2) + j) * (n + 2) + k] = 0.0f;
+      }
+    }
+  }
+
+  int k = 0;
+
+  for (int i = -radius;i < radius;i ++) {
+    for (int j = -radius;j < radius;j ++) {
+      float c_rot = j * cos_t - i * sin_t;
+      float r_rot = j * sin_t + i * cos_t;
+
+      float cbin = c_rot + d / 2 - 0.5f;
+      float rbin = r_rot + d / 2 - 0.5f;
+
+      int r = kpt_x + i,c = kpt_y + j;
+
+      if (rbin > -1 && rbin < d && cbin > -1 && cbin < d && r > 0 && r < rows - 1 && c > 0 && c < cols - 1) {
+        float dx = gauss_image.at<float>(r, c + 1) - gauss_image.at<float>(r, c - 1);
+        float dy = gauss_image.at<float>(r + 1, c) - gauss_image.at<float>(r - 1, c);
+
+        X[k] = dx;
+        Y[k] = dy;
+
+        CBin[k] = cbin;
+        RBin[k] = rbin;
+
+        W[k] = (c_rot * c_rot + r_rot * r_rot) * exp_scale;
+
+        k ++;
+      } 
+    }
+  }
+
+  len = k;
+
+  for (int i = 0;i < len;i ++) {
+    W[i] = exp(W[i]);
+  }
+  for (int i = 0;i < len;i ++) {
+    Angle[i] = atan2f(Y[i], X[i]);
+  }
+  cv::Mat _X = cv::Mat(1, len, CV_32F, X);
+  cv::Mat _Y = cv::Mat(1, len, CV_32F, Y);
+  cv::Mat _W = cv::Mat(1, len, CV_32F);
+  // 计算领域内的所有像素的幅度
+  cv::magnitude(_X, _Y, _W);
+  for (int i = 0;i < len;i ++) {
+    Mag[i] = _W.at<float>(0, i);
+  }
+
+  for (k = 0;k < len;k ++) {
+    float rbin = RBin[k];
+    float cbin = CBin[k];
+
+    float temp = Angle[k] - main_angle;
+
+    float obin = temp * bins_per_rad;
+
+    float mag = Mag[k] * W[k];
+
+    int r0 = int(rbin + 0.5f);
+    int c0 = int(cbin + 0.5f);
+    int o0 = int(obin + 0.5f);
+
+    rbin = rbin - r0;
+    cbin = cbin - c0;
+    obin = obin - o0;
+
+    if (o0 < 0) {
+      o0 += n;
+    }
+    if (o0 >= n) {
+      o0 -= n;
+    }
+
+    float v_r1 = mag * rbin;
+    float v_r0 = mag - v_r1;
+
+    float v_rc11 = v_r1 * cbin;
+    float v_rc10 = v_r1 - v_rc11;
+
+    float v_rc01 = v_r0 * cbin;
+    float v_rc00 = v_r0 - v_rc01;
+
+    float v_rco111 = v_rc11 * obin;
+    float v_rco110 = v_rc11 - v_rco111;
+
+    float v_rco101 = v_rc10 * obin;
+    float v_rco100 = v_rc10 - v_rco101;
+
+    float v_rco011 = v_rc01 * obin;
+    float v_rco010 = v_rc01 - v_rco011;
+
+    float v_rco001 = v_rc00 * obin;
+    float v_rco000 = v_rc00 - v_rco001;
+
+    int idx = ((r0 + 1) * (d + 2) + c0 + 1) * (n + 2) + o0;
+    hist[idx] += v_rco000;
+    hist[idx + 1] += v_rco001;
+    hist[idx + n + 2] += v_rco010;
+    hist[idx + n + 3] += v_rco011;
+    hist[idx + (d + 2) * (n + 2)] += v_rco100;
+    hist[idx + (d + 2) * (n + 2) + 1] += v_rco101;
+    hist[idx + (d + 3) * (n + 2)] += v_rco110;
+    hist[idx + (d + 3) * (n + 2) + 1] += v_rco111;
+  }
+
+  for (int i = 0;i < d;i ++) {
+    for (int j = 0;j < d;j ++) {
+      int idx = ((i + 1) * (d + 2) + (j + 1)) * (n + 2);
+      
+      hist[idx] += hist[idx + n];
+
+      for (k = 0;k < n;k ++) {
+        kpt->descriptor[(i * d + j) * n + k] = hist[idx + k];
+      }
+    }
+  }
+
+  int lenght = d * d * n;
+  float norm = 0;
+
+  for (int i = 0;i < lenght;i ++) {
+    norm += kpt->descriptor[i] * kpt->descriptor[i];
+  }
+  norm = sqrt(norm);
+
+  for (int i = 0;i < lenght;i ++) {
+    kpt->descriptor[i] /= norm;
+  }
+
+  for (int i = 0;i < lenght;i ++) {
+    kpt->descriptor[i] = std::min(kpt->descriptor[i], param.descr_mag_thr);
+  }
+
+  norm = 0;
+  for (int i = 0;i < lenght;i ++) {
+    norm += kpt->descriptor[i] * kpt->descriptor[i];
+  }
+  norm = sqrt(norm);
+  for (int i = 0;i < lenght;i ++) {
+    kpt->descriptor[i] /= norm;
+  }
+
+  delete[] buf;
+}
+void _calc_sift_descriptors(Image &src,std::vector<Octave> &octaves, const SiftParam &param) {
+  LOG(INFO, "计算SIFT特征点的描述子");
+  int d = param.descr_width;
+  int n = param.descr_hist_bins;
+  std::vector<std::shared_ptr<MY_IMG::KeyPoint>> &kpts = src.keypoints;
+  for (int i = 0;i < kpts.size();i ++) {
+    int octave = kpts[i]->octave & 255;
+    int layer = (kpts[i]->octave >> 8) & 255;
+    LOG(DEBUG, "octave: %d, layer: %d", octave, layer);
+
+    int x = kpts[i]->x / (1 << octave);
+    int y = kpts[i]->y / (1 << octave);
+    LOG(DEBUG, "kpt.x: %d, kpt.y: %d", kpts[i]->x, kpts[i]->y);
+    LOG(DEBUG, "x: %d, y: %d", x, y);
+
+    float scale = kpts[i]->size / (1 << octave);
+    float main_angle = kpts[i]->angle;
+    kpts[i]->descriptor.resize(d * d * n);
+    _calc_sift_descriptor(octaves[octave].layers[layer],param, main_angle, x, y, scale, d, n, kpts[i]);
+
+    if (param.keep_appearance) {
+      kpts[i]->x = kpts[i]->x / 2.0f;
+      kpts[i]->y = kpts[i]->y / 2.0f;
+    }
+  }
+}
 void FeatureExtraction(Image &src, const SiftParam &param) {
   std::vector<Octave> octaves;
   // -----------------------初始化图像金字塔--------------------------------
@@ -630,9 +838,14 @@ void FeatureExtraction(Image &src, const SiftParam &param) {
     src.keypoints.erase(src.keypoints.begin() + param.max_features,
                         src.keypoints.end());
   }
+  _calc_sift_descriptors(src, octaves, param);
   // show
 #ifdef DEBUG
   LOG(INFO, "keypoints size:%ld", src.keypoints.size());
+  for (auto kpt : src.keypoints) {
+    LOG(DEBUG, "keypoint: %d, %d, %f, %f, %f", kpt->x, kpt->y, kpt->size,
+        kpt->angle, kpt->response);
+  }
   int _o = 1;
   for (int i = 0; i < param.num_octave_layers + 3; i++) {
     cv::imshow("octave-" + std::to_string(_o) + "-layer-" + std::to_string(i),
@@ -664,13 +877,16 @@ void SIFT(Image &src) {
   // -----------------------初始化参数--------------------------------
   LOG(INFO, "初始化sift参数");
   SiftParam param;
-  param.num_octave =
-      std::min(static_cast<int>(log2(std::min(src.img.rows, src.img.cols))) - 3,
-               param.max_octave);
+  int temp;
+  float size_temp = (float)std::min(src.img.rows, src.img.cols);
+  temp = int(std::log(size_temp) / std::log(2) - 2 + 0.5f);
   if (param.keep_appearance) {
-    param.num_octave = std::min(param.num_octave + 1, param.max_octave);
+    temp += 1;
   }
-  param.num_octave_layers = 3;
+  if (temp > param.max_octave) {
+    temp = param.max_octave;
+  }
+  param.num_octave = temp;
   FeatureExtraction(src, param);
 }
 

@@ -18,16 +18,11 @@ void Match(
     std::vector<std::shared_ptr<MY_IMG::KeyPoint>> result, result_tmp;
     std::shared_ptr<MY_IMG::KeyPoint> kp_tmp;
     kps1->Query(kp, MAX_MATCH_BLOCK_SIZE, result);
-    for (auto &tmp : result) {
-      LOG(INFO,"match p1(%d,%d) - p2(%d,%d)", kp->x, kp->y, tmp->x, tmp->y);
-    }
     double dist = 1e18;
     for (int i = 0; i < result.size() && dist == 1e18; i++) {
       result_tmp.clear();
       kps2->Query(result.at(i), MAX_MATCH_BLOCK_SIZE, result_tmp);
       for (auto &tmp : result_tmp) {
-        LOG(INFO,"match p'(%d,%d) - p(%d,%d)", result.at(i)->x, result.at(i)->y,
-            tmp->x, tmp->y);
         if ((*tmp) == (*kp)) {
           LOG(INFO,"matched point mp(%d,%d) - mp(%d,%d)", result.at(i)->x,
               result.at(i)->y, tmp->x, tmp->y);
@@ -43,7 +38,9 @@ void Match(
         }
       }
     }
-    LOG(INFO,"dist : %f", dist);
+    if(dist != 1e18) {
+      LOG(INFO,"dist : %f", dist);
+    }
     if (dist > MAX_MATCH_DISTANCE) {
       continue;
     }

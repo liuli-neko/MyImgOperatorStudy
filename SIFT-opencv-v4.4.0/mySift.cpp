@@ -1296,8 +1296,8 @@ void mySift::find_scale_space_extrema1(const vector<vector<Mat>> &dog_pyr,
 
                 // kpt.angle = (360.f / n) * bin;			//原始
                 // SIFT 算子使用的特征点的主方向0-360度
-                LOG(INFO,"[%d %d %d]",i,left,right);
-                LOG(INFO,"point[%f,%f] angle: %f", kpt.pt.x, kpt.pt.y, kpt.angle);
+                // LOG(INFO,"[%d %d %d]",i,left,right);
+                // LOG(INFO,"point[%f,%f] angle: %f", kpt.pt.x, kpt.pt.y, kpt.angle);
                 keypoints.push_back(kpt); //保存该特征点
               }
             }
@@ -1307,8 +1307,9 @@ void mySift::find_scale_space_extrema1(const vector<vector<Mat>> &dog_pyr,
       // cv::imshow("curr_img_copy", curr_img_copy);
       // cv::waitKey(0);
     }
+   LOG(INFO, "numKeys: %d", numKeys);
+   LOG(INFO, "keypoints.size(): %ld", keypoints.size());
   }
-
   // cout << "初始满足要求特征点个数是: " << numKeys << endl;
 }
 
@@ -1515,7 +1516,7 @@ static void calc_sift_descriptor(const Mat &gauss_image, float main_angle,
 
     //该像素所在网格的索引
     int idx = ((r0 + 1) * (d + 2) + c0 + 1) * (n + 2) + o0;
-
+    // LOG(DEBUG,"idx : %d,n : %d,d : %d",idx,n,d);
     hist[idx] += v_rco000;
     hist[idx + 1] += v_rco001;
     hist[idx + n + 2] += v_rco010;

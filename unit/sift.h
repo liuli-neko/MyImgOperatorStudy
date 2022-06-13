@@ -10,7 +10,7 @@ namespace MY_IMG {
 // 定义sift的参数结构体
 struct SiftParam {
   int max_features = 0; // 最大特征点数量,0表示不限制
-  int num_octave_layers = 5; // 图像金字塔内每一层的层数
+  int num_octave_layers = 3; // 图像金字塔内每一层的层数
   double contrast_threshold = 0.03; // 对比度阈值(D(x))
   double edge_threshold = 10; // 边缘阈值(E(x))
   double sigma = 1.6; // 卷积核的标准差
@@ -18,7 +18,7 @@ struct SiftParam {
   double gauss_kernel_patio = 3; // 高斯核的尺寸size=2*gauss_kernel_patio*simga+1
   int max_octave = 10; // 最大octave数
   int num_octave = 5; // 图像金字塔的层数
-  float contr_threshold = 0.04; // 关键点的阈值
+  float contr_threshold = 0.03; // 关键点的阈值
   float curv_threshold = 10.0; // 关键点的阈值
   float init_sigma = 0.5; // 初始sigma
   int img_border = 2; // 图像边界忽略宽度

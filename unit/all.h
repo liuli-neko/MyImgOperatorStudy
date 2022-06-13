@@ -85,9 +85,11 @@ struct Octave {
 struct KeyPoint {
   int x, y;
   int octave;
+  int layer;
   float size;
   float angle;
   float response;
+  std::vector<float> hist;
   std::vector<float> descriptor;
   KeyPoint(int x = 0, int y = 0, int size = 0, int angle = 0)
       : x(x), y(y), size(size), angle(angle) {}

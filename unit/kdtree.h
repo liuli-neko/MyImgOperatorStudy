@@ -59,7 +59,7 @@ public:
       }
       ASSERT(q_.top().first < nodes_.size(), "q_.top.first[%d] < nodes_.size()[%ld]", q_.top().first,
              nodes_.size());
-      LOG(INFO,"q : [%d] [%lf]", q_.top().first, q_.top().second);
+      // LOG(INFO,"q : [%d] [%lf]", q_.top().first, q_.top().second);
       result.push_back(nodes_.at(q_.top().first)->element);
       q_.pop();
     }
