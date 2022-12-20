@@ -15,6 +15,10 @@
 // OpenCV
 #include <opencv2/opencv.hpp>
 
+// openmp
+#include <pthread.h>
+#include <omp.h>
+
 using IMG_Mat = cv::Mat;
 
 #ifndef IMG_OPERATOR_UNIT_ALL_H_
@@ -50,6 +54,9 @@ namespace MY_IMG {
     LOG(ERROR, format, ##__VA_ARGS__);                                         \
   }                                                                            \
   void(0)
+
+#define POSSIBLE_UNSED_PARAMETER __attribute__((unused))
+
 #define TEST(x) x
 #else
 #define LOG_DEBUG(fmt, ...) void(0)
@@ -59,6 +66,7 @@ namespace MY_IMG {
 #define LOG_FATAL(fmt, ...) void(0)
 #define LOG(LEVEL, format, ...) void(0)
 #define ASSERT(booleam, format, ...) void(0)
+#define POSSIBLE_UNSED_PARAMETER
 #endif
 #define sqr(x) ((x) * (x))
 
@@ -67,7 +75,7 @@ const double eps = 1e-6;
 struct Point {
   int x;
   int y;
-  Point(int x = 0, int y = 0) : x(x), y(y) {}
+  Point(int x_ = 0, int y_ = 0) : x(x_), y(y_) {}
   bool operator<(const Point &p) const {
     if (x == p.x) {
       return y < p.y;
@@ -83,16 +91,16 @@ struct Octave {
 };
 // 定义用于存储sift描述子的结构体
 struct KeyPoint {
-  int x, y;
-  int octave;
-  int layer;
-  float size;
-  float angle;
-  float response;
+  int x = 0, y = 0;
+  int octave = 0;
+  int layer = 0;
+  float size = 0.0;
+  float angle = 0.0;
+  float response = 0.0;
   std::vector<float> hist;
   std::vector<float> descriptor;
-  KeyPoint(int x = 0, int y = 0, int size = 0, int angle = 0)
-      : x(x), y(y), size(size), angle(angle) {}
+  KeyPoint(int x_ = 0, int y_ = 0, int size_ = 0, int angle_ = 0)
+      : x(x_), y(y_), size(size_), angle(angle_) {}
   bool operator<(const KeyPoint &p) const {
     if (x == p.x) {
       return y < p.y;

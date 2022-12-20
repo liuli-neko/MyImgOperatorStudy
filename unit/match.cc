@@ -19,7 +19,7 @@ void Match(
     std::shared_ptr<MY_IMG::KeyPoint> kp_tmp;
     kps1->Query(kp, MAX_MATCH_BLOCK_SIZE, result);
     double dist = 1e18;
-    for (int i = 0; i < result.size() && dist == 1e18; i++) {
+    for (int i = 0; i < static_cast<int>(result.size()) && dist == 1e18; i++) {
       result_tmp.clear();
       kps2->Query(result.at(i), MAX_MATCH_BLOCK_SIZE, result_tmp);
       for (auto &tmp : result_tmp) {
@@ -28,7 +28,7 @@ void Match(
               result.at(i)->y, tmp->x, tmp->y);
           dist = 0;
           kp_tmp = result.at(i);
-          for (int index_d = 0; index_d < kp->descriptor.size(); index_d++) {
+          for (int index_d = 0; index_d < static_cast<int>(kp->descriptor.size()); index_d++) {
             dist += (kp->descriptor.at(index_d) -
                      result.at(i)->descriptor.at(index_d)) *
                     (kp->descriptor.at(index_d) -
@@ -61,8 +61,8 @@ void _min_des_points(const std::shared_ptr<KeyPoint> &kp,
                       _cmp>
       min_des_points;
   double dist = -1;
-  for (int i = 0; i < kps.size() && dist == -1; i++) {
-    for (int index_d = 0; index_d < kp->descriptor.size(); index_d++) {
+  for (int i = 0; i < static_cast<int>(kps.size()) && dist == -1; i++) {
+    for (int index_d = 0; index_d < static_cast<int>(kp->descriptor.size()); index_d++) {
       dist += (kp->descriptor.at(index_d) - kps.at(i)->descriptor.at(index_d)) *
               (kp->descriptor.at(index_d) - kps.at(i)->descriptor.at(index_d));
     }
@@ -97,7 +97,7 @@ void Match(
     std::shared_ptr<MY_IMG::KeyPoint> min_kp;
     for (auto &kp_tmp : kps2->elements) {
       dist = 0;
-      for (int index_d = 0; index_d < kp->descriptor.size(); index_d++) {
+      for (int index_d = 0; index_d < static_cast<int>(kp->descriptor.size()); index_d++) {
         dist += (kp->descriptor.at(index_d) - kp_tmp->descriptor.at(index_d)) *
                 (kp->descriptor.at(index_d) - kp_tmp->descriptor.at(index_d));
       }

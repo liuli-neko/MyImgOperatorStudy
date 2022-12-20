@@ -26,11 +26,12 @@ public:
    * @param dim 元素维度
    */
   std::vector<Element> &elements;
-  KDTree(std::vector<Element> &elements, int dim) : elements(elements), n_(dim) {
-    LOG(INFO,"create kdtree...");
-    LOG(INFO,"dim: %d", dim);
+  KDTree(std::vector<Element> &elements_, int dim_)
+      : elements(elements_), n_(dim_) {
+    LOG(INFO, "create kdtree...");
+    LOG(INFO, "dim: %d", dim_);
     nodes_.resize(elements.size());
-    for (int i = 0; i < elements.size(); i++) {
+    for (int i = 0; i < static_cast<int>(elements.size()); i++) {
       nodes_.at(i) = std::shared_ptr<KDTreeNode<Element, val_type>>(
           new KDTreeNode<Element, val_type>());
       nodes_.at(i)->element = elements[i];
@@ -39,7 +40,7 @@ public:
   ~KDTree() { nodes_.clear(); }
   void Build() {
     int root = build(0, nodes_.size() - 1, 0);
-    LOG(INFO,"the root : %d,size : %ld", root, nodes_.size());
+    LOG(INFO, "the root : %d,size : %ld", root, nodes_.size());
   }
   void Query(const Element &element, int k, std::vector<Element> &result) {
     while (q_.size()) {
@@ -48,8 +49,8 @@ public:
     for (int i = 0; i < (k << 1); i++) {
       q_.push(std::make_pair(1e9, 1e18));
     }
-    query(0, nodes_.size() - 1, element);
-    while (q_.size() > k) {
+    query(0, static_cast<int>(nodes_.size()) - 1, element);
+    while (static_cast<int>(q_.size()) > k) {
       q_.pop();
     }
     for (int i = 0; i < k; i++) {
@@ -57,7 +58,8 @@ public:
         q_.pop();
         continue;
       }
-      ASSERT(q_.top().first < nodes_.size(), "q_.top.first[%d] < nodes_.size()[%ld]", q_.top().first,
+      ASSERT(q_.top().first < static_cast<int>(nodes_.size()),
+             "q_.top.first[%d] < nodes_.size()[%ld]", q_.top().first,
              nodes_.size());
       // LOG(INFO,"q : [%d] [%lf]", q_.top().first, q_.top().second);
       result.push_back(nodes_.at(q_.top().first)->element);
@@ -76,18 +78,22 @@ private:
     }
     if (nodes_.at(u)->left != -1) {
       for (int i = 0; i < n_; i++) {
-        nodes_.at(u)->max_val.at(i) = std::max(nodes_.at(u)->max_val.at(i),
-                                         nodes_.at(nodes_.at(u)->left)->max_val.at(i));
-        nodes_.at(u)->min_val.at(i) = std::min(nodes_.at(u)->min_val.at(i),
-                                         nodes_.at(nodes_.at(u)->left)->min_val.at(i));
+        nodes_.at(u)->max_val.at(i) =
+            std::max(nodes_.at(u)->max_val.at(i),
+                     nodes_.at(nodes_.at(u)->left)->max_val.at(i));
+        nodes_.at(u)->min_val.at(i) =
+            std::min(nodes_.at(u)->min_val.at(i),
+                     nodes_.at(nodes_.at(u)->left)->min_val.at(i));
       }
     }
     if (nodes_.at(u)->right != -1) {
       for (int i = 0; i < n_; i++) {
-        nodes_.at(u)->max_val.at(i) = std::max(nodes_.at(u)->max_val.at(i),
-                                         nodes_.at(nodes_.at(u)->right)->max_val.at(i));
-        nodes_.at(u)->min_val.at(i) = std::min(nodes_.at(u)->min_val.at(i),
-                                         nodes_.at(nodes_.at(u)->right)->min_val.at(i));
+        nodes_.at(u)->max_val.at(i) =
+            std::max(nodes_.at(u)->max_val.at(i),
+                     nodes_.at(nodes_.at(u)->right)->max_val.at(i));
+        nodes_.at(u)->min_val.at(i) =
+            std::min(nodes_.at(u)->min_val.at(i),
+                     nodes_.at(nodes_.at(u)->right)->min_val.at(i));
       }
     }
   }
@@ -117,41 +123,44 @@ private:
     if (x <= -1) {
       return -1;
     }
-    ASSERT(x >= 0 && x < nodes_.size(), "index error : %d > nodes_.size(%ld)", x, nodes_.size());
+    ASSERT(x >= 0 && x < nodes_.size(), "index error : %d > nodes_.size(%ld)",
+           x, nodes_.size());
     for (int i = 0; i < n_; i++) {
-      dist += std::max(sqr(static_cast<double>(
-                           (*elem)[i] - nodes_.at(x)->max_val.at(i))),
-                       sqr(static_cast<double>(
-                           (*elem)[i] - nodes_.at(x)->min_val.at(i))));
+      dist += std::max(
+          sqr(static_cast<double>((*elem)[i] - nodes_.at(x)->max_val.at(i))),
+          sqr(static_cast<double>((*elem)[i] - nodes_.at(x)->min_val.at(i))));
     }
     return dist;
   }
 
-  double getMin(int x,const Element &elem) {
+  double getMin(int x, const Element &elem) {
     double dist = 0;
     if (x <= -1) {
       return 1e9;
     }
-    ASSERT(x >= 0 && x < nodes_.size(), "index error : %d > nodes_.size(%ld)", x, nodes_.size());
+    ASSERT(x >= 0 && x < static_cast<int>(nodes_.size()), "index error : %d > nodes_.size(%ld)",
+           x, nodes_.size());
     for (int i = 0; i < n_; i++) {
-      dist += std::min(sqr(static_cast<double>(
-                           (*elem)[i] - nodes_.at(x)->max_val.at(i))),
-                       sqr(static_cast<double>(
-                           (*elem)[i] - nodes_.at(x)->min_val.at(i))));
+      dist += std::min(
+          sqr(static_cast<double>((*elem)[i] - nodes_.at(x)->max_val.at(i))),
+          sqr(static_cast<double>((*elem)[i] - nodes_.at(x)->min_val.at(i))));
     }
     return dist;
   }
 
   void query(int l, int r, const Element &elem) {
-    if (l > r){
+    if (l > r) {
       return;
     }
-    ASSERT(l >= 0 && l < nodes_.size(), "index error : %d > nodes_.size(%ld)", l, nodes_.size());
-    ASSERT(r >= 0 && r < nodes_.size(), "index error : %d > nodes_.size(%ld)", r, nodes_.size());
+    ASSERT(l >= 0 && l < static_cast<int>(nodes_.size()),
+           "index error : %d > nodes_.size(%ld)", l, nodes_.size());
+    ASSERT(r >= 0 && r < static_cast<int>(nodes_.size()), "index error : %d > nodes_.size(%ld)",
+           r, nodes_.size());
     int mid = (l + r) >> 1;
     double dist = 0;
     for (int i = 0; i < n_; i++) {
-      dist += sqr(static_cast<double>((*elem)[i] - (*(nodes_.at(mid)->element))[i]));
+      dist += sqr(
+          static_cast<double>((*elem)[i] - (*(nodes_.at(mid)->element))[i]));
     }
     if (dist <= q_.top().second) {
       q_.pop();

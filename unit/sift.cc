@@ -57,14 +57,16 @@ void _init_first_img(const Image &src, const SiftParam &param, IMG_Mat &img) {
     }
   }
 }
-void _init_octave_gauss_pyramid(Image &src, const SiftParam &param,
+
+void _init_octave_gauss_pyramid(POSSIBLE_UNSED_PARAMETER Image &src,
+                                const SiftParam &param,
                                 const std::vector<double> &sigmas,
                                 const IMG_Mat &first_img,
                                 std::vector<Octave> &Octaves) {
   int num_octaves = param.num_octave;
   int num_octave_layers = param.num_octave_layers + 3;
   Octaves.resize(num_octaves);
-  for (int i = 0; i < num_octaves;i ++ ) {
+  for (int i = 0; i < num_octaves; i++) {
     Octaves[i].layers.resize(num_octave_layers);
   }
 
@@ -95,7 +97,7 @@ void _init_octave_gauss_pyramid(Image &src, const SiftParam &param,
     }
   }
 }
-void _init_dog_pyramid(Image &src, std::vector<Octave> &Octaves,
+void _init_dog_pyramid(POSSIBLE_UNSED_PARAMETER Image &src, std::vector<Octave> &Octaves,
                        const SiftParam &param) {
   int num_octaves = param.num_octave;
   int num_octave_layers = param.num_octave_layers + 2;
@@ -106,14 +108,15 @@ void _init_dog_pyramid(Image &src, std::vector<Octave> &Octaves,
     }
   }
 }
-bool _adjust_local_extrema(Image &src, const std::vector<Octave> &Octaves,
-                           const SiftParam &param, std::shared_ptr<KeyPoint> &kp,
-                           int octave, int &layer, int &row, int &col) {
+bool _adjust_local_extrema(POSSIBLE_UNSED_PARAMETER Image &src, const std::vector<Octave> &Octaves,
+                           const SiftParam &param,
+                           std::shared_ptr<KeyPoint> &kp, int octave,
+                           int &layer, int &row, int &col) {
   // -----------------------迭代更新关键点位置-------------------------------
   const float img_scale = 1.0f / (255 * param.sift_fixpt_scale);
   const float deriv_scale = img_scale * 0.5f;
   const float second_deriv_scale = img_scale;
-  const float cross_deriv_scale = img_scale * 0.25f;
+  POSSIBLE_UNSED_PARAMETER const float cross_deriv_scale = img_scale * 0.25f;
 
   float xi = 0, xr = 0, xc = 0;
   int i = 0;
@@ -128,43 +131,47 @@ bool _adjust_local_extrema(Image &src, const std::vector<Octave> &Octaves,
     ASSERT(row > 0 && row < img.rows - 1 && col > 0 && col < img.cols - 1,
            "row: %d, col: %d", row, col);
     // 获取特征点的一阶偏导
-    float dx =
-        (img.at<float>(row, col + 1) - img.at<float>(row, col - 1)) * deriv_scale;
-    float dy =
-        (img.at<float>(row + 1, col) - img.at<float>(row - 1, col)) * deriv_scale;
-    float dz = (nex.at<float>(row, col) - pre.at<float>(row, col)) * deriv_scale;
+    float dx = (img.at<float>(row, col + 1) - img.at<float>(row, col - 1)) *
+               deriv_scale;
+    float dy = (img.at<float>(row + 1, col) - img.at<float>(row - 1, col)) *
+               deriv_scale;
+    float dz =
+        (nex.at<float>(row, col) - pre.at<float>(row, col)) * deriv_scale;
 
     // 获取特征点的二阶偏导
     float v2 = img.at<float>(row, col) * 2;
     float dxx =
-        (img.at<float>(row, col + 1) + img.at<float>(row, col - 1) - v2) * second_deriv_scale;
+        (img.at<float>(row, col + 1) + img.at<float>(row, col - 1) - v2) *
+        second_deriv_scale;
     float dyy =
-        (img.at<float>(row + 1, col) + img.at<float>(row - 1, col) - v2) * second_deriv_scale;
-    float dzz = (pre.at<float>(row, col) + nex.at<float>(row, col) - v2) * second_deriv_scale;
+        (img.at<float>(row + 1, col) + img.at<float>(row - 1, col) - v2) *
+        second_deriv_scale;
+    float dzz = (pre.at<float>(row, col) + nex.at<float>(row, col) - v2) *
+                second_deriv_scale;
 
     // 获取特征点二阶混合偏导
     float dxy =
-                (img.at<float>(row + 1, col + 1) + img.at<float>(row - 1, col - 1) -
-                img.at<float>(row + 1, col - 1) - img.at<float>(row - 1, col + 1)) *
-                second_deriv_scale;
+        (img.at<float>(row + 1, col + 1) + img.at<float>(row - 1, col - 1) -
+         img.at<float>(row + 1, col - 1) - img.at<float>(row - 1, col + 1)) *
+        second_deriv_scale;
     float dxz = (nex.at<float>(row, col + 1) + pre.at<float>(row, col - 1) -
                  nex.at<float>(row, col - 1) - pre.at<float>(row, col + 1)) *
-                 second_deriv_scale;
+                second_deriv_scale;
     float dyz = (nex.at<float>(row + 1, col) + pre.at<float>(row - 1, col) -
                  nex.at<float>(row - 1, col) - pre.at<float>(row + 1, col)) *
-                 second_deriv_scale;
+                second_deriv_scale;
 
-/* 不是求特征值？
-    Eigen::Matrix3d H;
-    H << dxx, dxy, dxz, dxy, dyy, dyz, dxz, dyz, dzz;
+    /* 不是求特征值？
+        Eigen::Matrix3d H;
+        H << dxx, dxy, dxz, dxy, dyy, dyz, dxz, dyz, dzz;
 
-    Eigen::Vector3d dD;
-    dD << dx, dy, dz;
+        Eigen::Vector3d dD;
+        dD << dx, dy, dz;
 
-    Eigen::Vector3d X;
-    // 利用SVD分解H矩阵得到特征点的最大值
-    X = H.colPivHouseholderQr().solve(dD);
-*/
+        Eigen::Vector3d X;
+        // 利用SVD分解H矩阵得到特征点的最大值
+        X = H.colPivHouseholderQr().solve(dD);
+    */
     cv::Vec3f dD(dx, dy, dz);
     cv::Matx33f H(dxx, dxy, dxz, dxy, dyy, dyz, dxz, dyz, dzz);
 
@@ -261,7 +268,8 @@ bool _adjust_local_extrema(Image &src, const std::vector<Octave> &Octaves,
 }
 
 float _calc_orientation_hist(const IMG_Mat &img, const SiftParam &param,
-                             std::shared_ptr<KeyPoint> &kp, float scale, int n) {
+                             std::shared_ptr<KeyPoint> &kp, float scale,
+                             int n) {
   // -----------------------------计算描述子--------------------------------
   std::vector<float> &hist = kp->hist;
   hist.resize(n); // 初始化描述子
@@ -324,7 +332,7 @@ float _calc_orientation_hist(const IMG_Mat &img, const SiftParam &param,
   cv::Mat _W = cv::Mat(1, len, CV_32F, W);
   // 计算领域内的所有像素的幅度
   cv::magnitude(_X, _Y, _W);
-  for (int i = 0;i < len;i ++) {
+  for (int i = 0; i < len; i++) {
     Mag[i] = _W.at<float>(0, i);
   }
 
@@ -368,14 +376,10 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
   // -----------------------检测极值点--------------------------------
   LOG(INFO,
       "-----------------------检测极值点--------------------------------");
-  int nOctaves = (int)Octaves.size();
   float threshold = (float)param.contrast_threshold / param.num_octave_layers;
   const int n = param.ori_hist_bins;
-  float hist[n];
 
   src.keypoints.clear();
-  int dx[] = {-1, 0, 1, -1, 1, -1, 0, 1, 0};
-  int dy[] = {-1, -1, -1, 0, 0, 1, 1, 1, 0};
 
   for (int i = 0; i < param.num_octave; i++) {
     int numKeys = 0;
@@ -391,24 +395,29 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
         for (int y = param.img_border; y < num_col - param.img_border; y++) {
 
           float val = curr_img.at<float>(x, y);
-          float _00,_01,_02;
-          float _10,    _12;
-          float _20,_21,_22;
+          float _00, _01, _02;
+          float _10, _12;
+          float _20, _21, _22;
 
-          float min_val,max_val;
-          
-          bool cond = std::abs(val) > threshold; 
+          float min_val, max_val;
+
+          bool cond = std::abs(val) > threshold;
           if (!(cond)) {
             continue;
           }
 
           // 检测极值点
-          _00 = curr_img.at<float>(x - 1, y - 1);_01 = curr_img.at<float>(x - 1, y);_02 = curr_img.at<float>(x - 1, y + 1);
-          _10 = curr_img.at<float>(x, y - 1);                                       _12 = curr_img.at<float>(x, y + 1);
-          _20 = curr_img.at<float>(x + 1, y - 1);_21 = curr_img.at<float>(x + 1, y);_22 = curr_img.at<float>(x + 1, y + 1);       
+          _00 = curr_img.at<float>(x - 1, y - 1);
+          _01 = curr_img.at<float>(x - 1, y);
+          _02 = curr_img.at<float>(x - 1, y + 1);
+          _10 = curr_img.at<float>(x, y - 1);
+          _12 = curr_img.at<float>(x, y + 1);
+          _20 = curr_img.at<float>(x + 1, y - 1);
+          _21 = curr_img.at<float>(x + 1, y);
+          _22 = curr_img.at<float>(x + 1, y + 1);
 
-          min_val = std::min({_00,_01,_02,_10,_12,_20,_21,_22});
-          max_val = std::max({_00,_01,_02,_10,_12,_20,_21,_22});
+          min_val = std::min({_00, _01, _02, _10, _12, _20, _21, _22});
+          max_val = std::max({_00, _01, _02, _10, _12, _20, _21, _22});
 
           bool condp = cond & (val > 0) & (val >= max_val);
           bool condn = cond & (val < 0) & (val <= min_val);
@@ -419,12 +428,17 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
             continue;
           }
 
-          _00 = prev_img.at<float>(x - 1, y - 1);_01 = prev_img.at<float>(x - 1, y);_02 = prev_img.at<float>(x - 1, y + 1);
-          _10 = prev_img.at<float>(x, y - 1);                                       _12 = prev_img.at<float>(x, y + 1); 
-          _20 = prev_img.at<float>(x + 1, y - 1);_21 = prev_img.at<float>(x + 1, y);_22 = prev_img.at<float>(x + 1, y + 1);
+          _00 = prev_img.at<float>(x - 1, y - 1);
+          _01 = prev_img.at<float>(x - 1, y);
+          _02 = prev_img.at<float>(x - 1, y + 1);
+          _10 = prev_img.at<float>(x, y - 1);
+          _12 = prev_img.at<float>(x, y + 1);
+          _20 = prev_img.at<float>(x + 1, y - 1);
+          _21 = prev_img.at<float>(x + 1, y);
+          _22 = prev_img.at<float>(x + 1, y + 1);
 
-          min_val = std::min({_00,_01,_02,_10,_12,_20,_21,_22});
-          max_val = std::max({_00,_01,_02,_10,_12,_20,_21,_22});
+          min_val = std::min({_00, _01, _02, _10, _12, _20, _21, _22});
+          max_val = std::max({_00, _01, _02, _10, _12, _20, _21, _22});
 
           condp = (val >= max_val);
           condn = (val <= min_val);
@@ -437,15 +451,20 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
           float _11p = prev_img.at<float>(x, y);
           float _11n = next_img.at<float>(x, y);
 
-          float max_middle = std::max({_11p,_11n});
-          float min_middle = std::min({_11p,_11n});
+          float max_middle = std::max({_11p, _11n});
+          float min_middle = std::min({_11p, _11n});
 
-          _00 = next_img.at<float>(x - 1, y - 1);_01 = next_img.at<float>(x - 1, y);_02 = next_img.at<float>(x - 1, y + 1);
-          _10 = next_img.at<float>(x, y - 1);                                       _12 = next_img.at<float>(x, y + 1);
-          _20 = next_img.at<float>(x + 1, y - 1);_21 = next_img.at<float>(x + 1, y);_22 = next_img.at<float>(x + 1, y + 1);
+          _00 = next_img.at<float>(x - 1, y - 1);
+          _01 = next_img.at<float>(x - 1, y);
+          _02 = next_img.at<float>(x - 1, y + 1);
+          _10 = next_img.at<float>(x, y - 1);
+          _12 = next_img.at<float>(x, y + 1);
+          _20 = next_img.at<float>(x + 1, y - 1);
+          _21 = next_img.at<float>(x + 1, y);
+          _22 = next_img.at<float>(x + 1, y + 1);
 
-          min_val = std::min({_00,_01,_02,_10,_12,_20,_21,_22});
-          max_val = std::max({_00,_01,_02,_10,_12,_20,_21,_22});
+          min_val = std::min({_00, _01, _02, _10, _12, _20, _21, _22});
+          max_val = std::max({_00, _01, _02, _10, _12, _20, _21, _22});
 
           condp &= (val >= std::max(max_val, max_middle));
           condn &= (val <= std::min(min_val, min_middle));
@@ -459,8 +478,8 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
           // 检测极值点
           std::shared_ptr<KeyPoint> kpt(new KeyPoint);
           int octave = i, layer = j, r1 = x, c1 = y;
-          if (_adjust_local_extrema(src, Octaves, param, kpt, octave, layer,
-                                    r1, c1)) {
+          if (_adjust_local_extrema(src, Octaves, param, kpt, octave, layer, r1,
+                                    c1)) {
             // ASSERT(kp.x == r1 && kp.y == c1,"kp(%d %d) != (%d %d)", kp.x,
             // kp.y, r1, c1);
             // LOG(INFO,"kpt(%d %d) != (%d %d)", kpt->x, kpt->y, r1, c1);
@@ -473,28 +492,25 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
             float sum = 0.0;
             float mag_thr = 0.0;
 
-            for (int i = 0; i < n; i++) {
-              sum += kpt->hist[i];
+            for (int k = 0; k < n; k++) {
+              sum += kpt->hist[k];
             }
             mag_thr = (float)(max_hist * param.ori_peak_ratio);
 
             // 遍历所有bin
-            for (int i = 0; i < n; i++) {
-              int left = i > 0 ? i - 1 : n - 1;
-              int right = i < n - 1 ? i + 1 : 0;
+            for (int k = 0; k < n; k++) {
+              int left = k > 0 ? k - 1 : n - 1;
+              int right = k < n - 1 ? k + 1 : 0;
 
               //创建新的特征点，大于主峰的80%
-              if (kpt->hist[i] > kpt->hist[left] &&
-                  kpt->hist[i] > kpt->hist[right] &&
-                  kpt->hist[i] >= mag_thr) {
-                float bin =
-                    i + 0.5f *
-                            (kpt->hist[left] - kpt->hist[right]) /
-                            (kpt->hist[left] + kpt->hist[right] -
-                              2 * kpt->hist[i]);
+              if (kpt->hist[k] > kpt->hist[left] &&
+                  kpt->hist[k] > kpt->hist[right] && kpt->hist[k] >= mag_thr) {
+                float bin = k + 0.5f * (kpt->hist[left] - kpt->hist[right]) /
+                                    (kpt->hist[left] + kpt->hist[right] -
+                                     2 * kpt->hist[k]);
                 bin = bin < 0 ? n + bin : bin >= n ? bin - n : bin;
                 // 对主方向做一个细化
-                float angle =360.0f - (360.0f / n) * bin;
+                float angle = 360.0f - (360.0f / n) * bin;
                 if (std::abs(angle - 360.0f) < 1e-7) {
                   angle = 0.0f;
                 }
@@ -601,7 +617,6 @@ void image_pyramid_create_opencv(Image &src, const SiftParam &param,
         cv::GaussianBlur(octaves[i].layers[j - 1], octaves[i].layers[j],
                          kernel_size, sig[j], sig[j]);
       }
-     
     }
   }
 
@@ -612,8 +627,9 @@ void image_pyramid_create_opencv(Image &src, const SiftParam &param,
     }
   }
 }
-void _calc_sift_descriptor(const IMG_Mat &gauss_image,const SiftParam &param,float main_angle,
-                           float x,float y,float scale,int d,int n,std::shared_ptr<KeyPoint> &kpt) {
+void _calc_sift_descriptor(const IMG_Mat &gauss_image, const SiftParam &param,
+                           float main_angle, float x, float y, float scale,
+                           int d, int n, std::shared_ptr<KeyPoint> &kpt) {
   int kpt_x = int(x + 0.5);
   int kpt_y = int(y + 0.5);
 
@@ -640,13 +656,13 @@ void _calc_sift_descriptor(const IMG_Mat &gauss_image,const SiftParam &param,flo
 
   int histlen = (d + 2) * (d + 2) * (n + 2);
 
-  float *buf = new float[6*len + histlen];
-  float *X = buf, *Y = buf + len, *Mag = Y,*Angle = Y + len,*W = Angle + len;
-  float *RBin = W + len,*CBin = RBin + len,*hist = CBin + len;
+  float *buf = new float[6 * len + histlen];
+  float *X = buf, *Y = buf + len, *Mag = Y, *Angle = Y + len, *W = Angle + len;
+  float *RBin = W + len, *CBin = RBin + len, *hist = CBin + len;
 
-  for (int i = 0;i < d + 2;i ++) {
-    for (int j = 0;j < d + 2;j ++) {
-      for (int k = 0;k < n + 2;k ++) {
+  for (int i = 0; i < d + 2; i++) {
+    for (int j = 0; j < d + 2; j++) {
+      for (int k = 0; k < n + 2; k++) {
         hist[(i * (d + 2) + j) * (n + 2) + k] = 0.0f;
       }
     }
@@ -654,19 +670,22 @@ void _calc_sift_descriptor(const IMG_Mat &gauss_image,const SiftParam &param,flo
 
   int k = 0;
 
-  for (int i = -radius;i < radius;i ++) {
-    for (int j = -radius;j < radius;j ++) {
+  for (int i = -radius; i < radius; i++) {
+    for (int j = -radius; j < radius; j++) {
       float c_rot = j * cos_t - i * sin_t;
       float r_rot = j * sin_t + i * cos_t;
 
       float cbin = c_rot + d / 2 - 0.5f;
       float rbin = r_rot + d / 2 - 0.5f;
 
-      int r = kpt_x + i,c = kpt_y + j;
+      int r = kpt_x + i, c = kpt_y + j;
 
-      if (rbin > -1 && rbin < d && cbin > -1 && cbin < d && r > 0 && r < rows - 1 && c > 0 && c < cols - 1) {
-        float dx = gauss_image.at<float>(r, c + 1) - gauss_image.at<float>(r, c - 1);
-        float dy = gauss_image.at<float>(r + 1, c) - gauss_image.at<float>(r - 1, c);
+      if (rbin > -1 && rbin < d && cbin > -1 && cbin < d && r > 0 &&
+          r < rows - 1 && c > 0 && c < cols - 1) {
+        float dx =
+            gauss_image.at<float>(r, c + 1) - gauss_image.at<float>(r, c - 1);
+        float dy =
+            gauss_image.at<float>(r + 1, c) - gauss_image.at<float>(r - 1, c);
 
         X[k] = dx;
         Y[k] = dy;
@@ -676,17 +695,17 @@ void _calc_sift_descriptor(const IMG_Mat &gauss_image,const SiftParam &param,flo
 
         W[k] = (c_rot * c_rot + r_rot * r_rot) * exp_scale;
 
-        k ++;
-      } 
+        k++;
+      }
     }
   }
 
   len = k;
 
-  for (int i = 0;i < len;i ++) {
+  for (int i = 0; i < len; i++) {
     W[i] = exp(W[i]);
   }
-  for (int i = 0;i < len;i ++) {
+  for (int i = 0; i < len; i++) {
     Angle[i] = atan2f(Y[i], X[i]);
   }
   cv::Mat _X = cv::Mat(1, len, CV_32F, X);
@@ -694,11 +713,11 @@ void _calc_sift_descriptor(const IMG_Mat &gauss_image,const SiftParam &param,flo
   cv::Mat _W = cv::Mat(1, len, CV_32F);
   // 计算领域内的所有像素的幅度
   cv::magnitude(_X, _Y, _W);
-  for (int i = 0;i < len;i ++) {
+  for (int i = 0; i < len; i++) {
     Mag[i] = _W.at<float>(0, i);
   }
 
-  for (k = 0;k < len;k ++) {
+  for (k = 0; k < len; k++) {
     float rbin = RBin[k];
     float cbin = CBin[k];
 
@@ -755,13 +774,13 @@ void _calc_sift_descriptor(const IMG_Mat &gauss_image,const SiftParam &param,flo
     hist[idx + (d + 3) * (n + 2) + 1] += v_rco111;
   }
 
-  for (int i = 0;i < d;i ++) {
-    for (int j = 0;j < d;j ++) {
+  for (int i = 0; i < d; i++) {
+    for (int j = 0; j < d; j++) {
       int idx = ((i + 1) * (d + 2) + (j + 1)) * (n + 2);
-      
+
       hist[idx] += hist[idx + n];
 
-      for (k = 0;k < n;k ++) {
+      for (k = 0; k < n; k++) {
         kpt->descriptor[(i * d + j) * n + k] = hist[idx + k];
       }
     }
@@ -770,36 +789,37 @@ void _calc_sift_descriptor(const IMG_Mat &gauss_image,const SiftParam &param,flo
   int lenght = d * d * n;
   float norm = 0;
 
-  for (int i = 0;i < lenght;i ++) {
+  for (int i = 0; i < lenght; i++) {
     norm += kpt->descriptor[i] * kpt->descriptor[i];
   }
   norm = sqrt(norm);
 
-  for (int i = 0;i < lenght;i ++) {
+  for (int i = 0; i < lenght; i++) {
     kpt->descriptor[i] /= norm;
   }
 
-  for (int i = 0;i < lenght;i ++) {
+  for (int i = 0; i < lenght; i++) {
     kpt->descriptor[i] = std::min(kpt->descriptor[i], param.descr_mag_thr);
   }
 
   norm = 0;
-  for (int i = 0;i < lenght;i ++) {
+  for (int i = 0; i < lenght; i++) {
     norm += kpt->descriptor[i] * kpt->descriptor[i];
   }
   norm = sqrt(norm);
-  for (int i = 0;i < lenght;i ++) {
+  for (int i = 0; i < lenght; i++) {
     kpt->descriptor[i] /= norm;
   }
 
   delete[] buf;
 }
-void _calc_sift_descriptors(Image &src,std::vector<Octave> &octaves, const SiftParam &param) {
+void _calc_sift_descriptors(Image &src, std::vector<Octave> &octaves,
+                            const SiftParam &param) {
   LOG(INFO, "计算SIFT特征点的描述子");
   int d = param.descr_width;
   int n = param.descr_hist_bins;
   std::vector<std::shared_ptr<MY_IMG::KeyPoint>> &kpts = src.keypoints;
-  for (int i = 0;i < kpts.size();i ++) {
+  for (int i = 0; i < static_cast<int>(kpts.size()); i++) {
     int octave = kpts[i]->octave & 255;
     int layer = (kpts[i]->octave >> 8) & 255;
     LOG(DEBUG, "octave: %d, layer: %d", octave, layer);
@@ -812,7 +832,8 @@ void _calc_sift_descriptors(Image &src,std::vector<Octave> &octaves, const SiftP
     float scale = kpts[i]->size / (1 << octave);
     float main_angle = kpts[i]->angle;
     kpts[i]->descriptor.resize(d * d * n);
-    _calc_sift_descriptor(octaves[octave].layers[layer],param, main_angle, x, y, scale, d, n, kpts[i]);
+    _calc_sift_descriptor(octaves[octave].layers[layer], param, main_angle, x,
+                          y, scale, d, n, kpts[i]);
 
     if (param.keep_appearance) {
       kpts[i]->x = kpts[i]->x / 2.0f;
@@ -828,7 +849,7 @@ void FeatureExtraction(Image &src, const SiftParam &param) {
   LOG(INFO, "检测关键点");
   _detect_keypoint(src, octaves, param);
   // 如果设置了特征点个数限制，则进行剪裁
-  if (param.max_features != 0 && src.keypoints.size() > param.max_features) {
+  if (param.max_features != 0 && static_cast<int>(src.keypoints.size()) > param.max_features) {
     std::sort(src.keypoints.begin(), src.keypoints.end(),
               [](const std::shared_ptr<KeyPoint> &a,
                  const std::shared_ptr<KeyPoint> &b) {

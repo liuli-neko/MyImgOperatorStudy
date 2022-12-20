@@ -6,7 +6,7 @@
 using namespace std;
 using namespace cv;
 
-int main(int argc, char **argv) {
+int main() {
 
   Mat img = Mat(3, 7, CV_8U);
 

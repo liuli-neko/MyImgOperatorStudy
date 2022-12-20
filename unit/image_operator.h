@@ -30,7 +30,7 @@ void DrawMatch(const IMG_Mat &img1, const IMG_Mat &img2,
                    &match_result,
                IMG_Mat &img_out);
 template <typename InPixeType, typename OutPixeType>
-void ConvertTo(const IMG_Mat &img, IMG_Mat &img_out,std::function<OutPixeType(const InPixeType&)> &func);
+void ConvertTo(const IMG_Mat &img, IMG_Mat &img_out,const std::function<OutPixeType(const InPixeType&)> &func);
 } // namespace MY_IMG
 template <typename InPixeType, typename OutPixeType>
 void MY_IMG::ConvertTo(const IMG_Mat &img, IMG_Mat &img_out,const std::function<OutPixeType(const InPixeType&)> &func) {

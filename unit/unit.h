@@ -34,9 +34,9 @@ struct ButterworthFilter {
   int n;
   double W;
   std::pair<double, double> center;
-  ButterworthFilter(std::pair<double, double> center, double D0 = 10, int n = 2,
-                    double W = 1.0)
-      : center(center), D0(D0), n(n), W(W) {}
+  ButterworthFilter(std::pair<double, double> center_, double D0_ = 10, int n_ = 2,
+                    double W_ = 1.0)
+      : D0(D0_), n(n_), W(W_), center(center_) {}
   double LowPassFilter(double x, double y) {
     double D = Dist(x, y, center.first, center.second);
     return 1.0 / (1.0 + pow(D / D0, 2 * n));
@@ -55,8 +55,8 @@ struct ButterworthFilter {
 struct GaussianFilter {
   double D0;
   std::pair<double, double> center;
-  GaussianFilter(std::pair<double, double> center, double D0 = 1.0)
-      : center(center), D0(D0) {}
+  GaussianFilter(std::pair<double, double> center_, double D0_ = 1.0)
+      : D0(D0_), center(center_) {}
   double LowPassFilter(double x, double y) {
     double D = Dist(x, y, center.first, center.second);
     return exp(-D * D / (2 * D0 * D0));
@@ -97,8 +97,9 @@ void CreateGaussBlurFilter(IMG_Mat &filter, const double &sigma, int radim_h,
  * @param sigma 标准差
  * @param radim 滤波核半径(-1时将自动计算,基于经验上的最大影响范围)
  * @note 基于高斯滤波的特殊性的样子，应该不能通用
-*/
-void GaussBlur(const IMG_Mat &src, IMG_Mat &dst, const double &sigma,const double &radim = -1);
+ */
+void GaussBlur(const IMG_Mat &src, IMG_Mat &dst, const double &sigma,
+               const double &radim = -1);
 /**
  * @brief 对图像进行卷积
  * @param src 原图像
@@ -115,7 +116,7 @@ template <typename T>
 IMG_Mat ConvertSingleChannelMat2ComplexMat(const IMG_Mat &img);
 template <typename PixeType>
 IMG_Mat ConvertSingleChannelMat2Uint8Mat(const IMG_Mat &img,
-                                  const bool &is_mapping = false);
+                                         const bool &is_mapping = false);
 
 // 定义傅里叶变换的函数声明
 void DFT(const IMG_Mat &src, IMG_Mat &dst);
@@ -144,7 +145,8 @@ IMG_Mat MY_IMG::ConvertSingleChannelMat2ComplexMat(const IMG_Mat &img) {
   return result;
 }
 template <typename PixeType>
-IMG_Mat MY_IMG::ConvertSingleChannelMat2Uint8Mat(const IMG_Mat &img, const bool &is_mapping) {
+IMG_Mat MY_IMG::ConvertSingleChannelMat2Uint8Mat(const IMG_Mat &img,
+                                                 const bool &is_mapping) {
   int height = img.rows;
   int width = img.cols;
   IMG_Mat result = IMG_Mat(height, width, CV_8UC1);
@@ -156,15 +158,17 @@ IMG_Mat MY_IMG::ConvertSingleChannelMat2Uint8Mat(const IMG_Mat &img, const bool 
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
       if (is_mapping) {
-        result.at<uint8_t>(i, j) = static_cast<uint8_t>(
-            255 * (img.at<PixeType>(i, j) - min_value) / (max_value - min_value));
+        result.at<uint8_t>(i, j) =
+            static_cast<uint8_t>(255 * (img.at<PixeType>(i, j) - min_value) /
+                                 (max_value - min_value));
       } else {
         if (img.at<PixeType>(i, j) < 0) {
           result.at<uint8_t>(i, j) = 0;
         } else if (img.at<PixeType>(i, j) > 255) {
           result.at<uint8_t>(i, j) = 255;
         } else {
-          result.at<uint8_t>(i, j) = static_cast<uint8_t>(img.at<PixeType>(i, j));
+          result.at<uint8_t>(i, j) =
+              static_cast<uint8_t>(img.at<PixeType>(i, j));
         }
       }
     }

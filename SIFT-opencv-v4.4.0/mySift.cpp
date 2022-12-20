@@ -55,7 +55,7 @@ void sobelfilter(Mat &image, Mat &G) {
   G = Mat::zeros(rows, cols,
                  CV_32FC1); //在每个像素点处的灰度大小由Gx和Gy共同决定
 
-  double v = 0.0, vx, vy;
+  double v = 0.0;
 
   //利用 sobel 算子求梯度幅度图像
   for (int i = 0; i < rows; i++) {
@@ -65,15 +65,13 @@ void sobelfilter(Mat &image, Mat &G) {
       if (i == 0 || j == 0 || i == rows - 1 || j == cols - 1) {
         G.at<float>(i, j) = 0.0;
       } else {
-        float dx =
-            image.at<float>(i - 1, j + 1) - image.at<float>(i - 1, j - 1) +
-            2 * image.at<float>(i, j + 1) - 2 * image.at<float>(i, j - 1) +
-            image.at<float>(i + 1, j + 1) - image.at<float>(i + 1, j - 1);
+        dx = image.at<float>(i - 1, j + 1) - image.at<float>(i - 1, j - 1) +
+             2 * image.at<float>(i, j + 1) - 2 * image.at<float>(i, j - 1) +
+             image.at<float>(i + 1, j + 1) - image.at<float>(i + 1, j - 1);
 
-        float dy =
-            image.at<float>(i + 1, j - 1) - image.at<float>(i - 1, j - 1) +
-            2 * image.at<float>(i + 1, j) - 2 * image.at<float>(i - 1, j) +
-            image.at<float>(i + 1, j + 1) - image.at<float>(i - 1, j + 1);
+        dy = image.at<float>(i + 1, j - 1) - image.at<float>(i - 1, j - 1) +
+             2 * image.at<float>(i + 1, j) - 2 * image.at<float>(i - 1, j) +
+             image.at<float>(i + 1, j + 1) - image.at<float>(i - 1, j + 1);
 
         v = abs(dx) + abs(dy); //简化后 G = |Gx| + |Gy|
 
@@ -274,7 +272,7 @@ void mySift::build_gaussian_pyramid(const Mat &init_image,
     sig.push_back(sqrt(curr_sig * curr_sig - prev_sig * prev_sig));
   }
   for (auto s : sig) {
-    LOG(INFO,"sig:%lf", s);
+    LOG(INFO, "sig:%lf", s);
   }
   gauss_pyramid.resize(nOctaves);
 
@@ -499,8 +497,8 @@ static float clac_orientation_hist(const Mat &image, Point pt, float scale,
 
 /***********************使用 sobel
  * 滤波器定义的新梯度计算尺度空间特征点的主方向**************************/
-static float clac_orientation_hist_2(Mat &image, Point pt, float scale, int n,
-                                     float *hist) {
+POSSIBLE_UNSED_PARAMETER static float
+clac_orientation_hist_2(Mat &image, Point pt, float scale, int n, float *hist) {
   Mat output_image; //使用 sobel 滤波器计算的图像的梯度幅度图像
 
   sobelfilter(image,
@@ -627,8 +625,10 @@ static float clac_orientation_hist_2(Mat &image, Point pt, float scale, int n,
   hist表示生成的直方图
   n表示主方向直方图bin个数
  */
-static float calc_orient_hist(const Mat &amplit, const Mat &orient, Point pt,
-                              float scale, float *hist, int n) {
+POSSIBLE_UNSED_PARAMETER static float calc_orient_hist(const Mat &amplit,
+                                                       const Mat &orient,
+                                                       Point pt, float scale,
+                                                       float *hist, int n) {
   //暂且认为是只进行了下采样，没有进行高斯模糊
   int num_row = amplit.rows;
   int num_col = amplit.cols;
@@ -1130,16 +1130,16 @@ void mySift::find_scale_space_extrema(const vector<vector<Mat>> &dog_pyr,
                 max_hist * ORI_PEAK_RATIO; //主峰值 80% 的方向作为辅助方向
 
             //遍历直方图中的 36 个bin
-            for (int i = 0; i < n; ++i) {
-              int left = i > 0 ? i - 1 : n - 1;
-              int right = i < n - 1 ? i + 1 : 0;
+            for (int k = 0; k < n; ++k) {
+              int left = k > 0 ? k - 1 : n - 1;
+              int right = k < n - 1 ? k + 1 : 0;
 
               //创建新的特征点，大于主峰值 80%
               //的方向，赋值给该特征点，作为一个新的特征点；即有多个特征点，位置、尺度相同，方向不同
-              if (hist[i] > hist[left] && hist[i] > hist[right] &&
-                  hist[i] >= mag_thr) {
-                float bin = i + 0.5f * (hist[left] - hist[right]) /
-                                    (hist[left] + hist[right] - 2 * hist[i]);
+              if (hist[k] > hist[left] && hist[k] > hist[right] &&
+                  hist[k] >= mag_thr) {
+                float bin = k + 0.5f * (hist[left] - hist[right]) /
+                                    (hist[left] + hist[right] - 2 * hist[k]);
                 bin = bin < 0 ? n + bin : bin >= n ? bin - n : bin;
 
                 kpt.angle = (360.f / n) *
@@ -1151,7 +1151,7 @@ void mySift::find_scale_space_extrema(const vector<vector<Mat>> &dog_pyr,
         }
       }
     }
-    LOG(INFO,"numKeys : %d", numKeys);
+    LOG(INFO, "numKeys : %d", numKeys);
   }
 
   // cout << "初始满足要求特征点个数是: " << numKeys << endl;
@@ -1239,7 +1239,8 @@ void mySift::find_scale_space_extrema1(const vector<vector<Mat>> &dog_pyr,
                 val <= next_ptr[c + step + 1]))) {
             ++numKeys;
             //获得特征点初始行号，列号，组号，组内层号
-            int octave = i, layer = j, r1 = r, c1 = c, nums = i * nOctaves + j;
+            POSSIBLE_UNSED_PARAMETER int octave = i, layer = j, r1 = r, c1 = c,
+                                         nums = i * nOctaves + j;
             // cv::circle(curr_img_copy, cv::Point(r, c), 3, cv::Scalar(0, 0,
             // 255), 1);
             if (!adjust_local_extrema_2(dog_pyr, kpt, octave, layer, r1, c1,
@@ -1255,7 +1256,7 @@ void mySift::find_scale_space_extrema1(const vector<vector<Mat>> &dog_pyr,
             // amplit_orient(curr_img, amplit, orient, scale, nums);
 
             // max_hist值对应的方向为主方向
-            float max_hist = clac_orientation_hist(
+            POSSIBLE_UNSED_PARAMETER float max_hist = clac_orientation_hist(
                 gauss_pyr[octave][layer], Point(c1, r1), scale, n, hist);
             // float max_hist = calc_orient_hist(amplit[nums], orient[nums],
             // Point2f(c1, r1), scale, hist, n);
@@ -1268,22 +1269,22 @@ void mySift::find_scale_space_extrema1(const vector<vector<Mat>> &dog_pyr,
             float sum = 0.0;     //直方图对应的幅值之和
             float mag_thr = 0.0; //判断是否为主方向的阈值
 
-            for (int i = 0; i < n; ++i) {
-              sum += hist[i];
+            for (int k = 0; k < n; ++k) {
+              sum += hist[k];
             }
             mag_thr = 0.5 * (1.0 / 36) * sum;
 
             //遍历直方图中的 36 个bin
-            for (int i = 0; i < n; ++i) {
-              int left = i > 0 ? i - 1 : n - 1;
-              int right = i < n - 1 ? i + 1 : 0;
+            for (int k = 0; k < n; ++k) {
+              int left = k > 0 ? k - 1 : n - 1;
+              int right = k < n - 1 ? k + 1 : 0;
 
               //创建新的特征点，大于主峰值 80%
               //的方向，赋值给该特征点，作为一个新的特征点；即有多个特征点，位置、尺度相同，方向不同
-              if (hist[i] > hist[left] && hist[i] > hist[right] &&
-                  hist[i] >= mag_thr) {
-                float bin = i + 0.5f * (hist[left] - hist[right]) /
-                                    (hist[left] + hist[right] - 2 * hist[i]);
+              if (hist[k] > hist[left] && hist[k] > hist[right] &&
+                  hist[k] >= mag_thr) {
+                float bin = k + 0.5f * (hist[left] - hist[right]) /
+                                    (hist[left] + hist[right] - 2 * hist[k]);
                 bin = bin < 0 ? n + bin : bin >= n ? bin - n : bin;
 
                 //修改的地方，特征点的主方向修改为了0-180度，相当于对方向做了一个细化
@@ -1297,7 +1298,8 @@ void mySift::find_scale_space_extrema1(const vector<vector<Mat>> &dog_pyr,
                 // kpt.angle = (360.f / n) * bin;			//原始
                 // SIFT 算子使用的特征点的主方向0-360度
                 // LOG(INFO,"[%d %d %d]",i,left,right);
-                // LOG(INFO,"point[%f,%f] angle: %f", kpt.pt.x, kpt.pt.y, kpt.angle);
+                // LOG(INFO,"point[%f,%f] angle: %f", kpt.pt.x, kpt.pt.y,
+                // kpt.angle);
                 keypoints.push_back(kpt); //保存该特征点
               }
             }
@@ -1307,8 +1309,8 @@ void mySift::find_scale_space_extrema1(const vector<vector<Mat>> &dog_pyr,
       // cv::imshow("curr_img_copy", curr_img_copy);
       // cv::waitKey(0);
     }
-   LOG(INFO, "numKeys: %d", numKeys);
-   LOG(INFO, "keypoints.size(): %ld", keypoints.size());
+    LOG(INFO, "numKeys: %d", numKeys);
+    LOG(INFO, "keypoints.size(): %ld", keypoints.size());
   }
   // cout << "初始满足要求特征点个数是: " << numKeys << endl;
 }
@@ -1636,7 +1638,7 @@ static void calc_gloh_descriptor(const Mat &amplit, const Mat &orient,
       c_rot.mul(c_rot) + r_rot.mul(r_rot); //为了加快速度，没有计算开方
 
   //三个圆半径平方
-  float R1_pow = (float)radius * radius; //外圆半径平方
+  POSSIBLE_UNSED_PARAMETER float R1_pow = (float)radius * radius; //外圆半径平方
   float R2_pow = pow(radius * SAR_SIFT_GLOH_RATIO_R1_R2, 2.f); //中间圆半径平方
   float R3_pow = pow(radius * SAR_SIFT_GLOH_RATIO_R1_R3, 2.f); //内圆半径平方
 
@@ -1711,10 +1713,10 @@ static void calc_gloh_descriptor(const Mat &amplit, const Mat &orient,
 }
 
 /******************************计算一个特征点的描述子—改进版***********************************/
-static void improve_calc_sift_descriptor(const Mat &gauss_image,
-                                         float main_angle, Point2f pt,
-                                         float scale, int d, int n,
-                                         float *descriptor) {
+POSSIBLE_UNSED_PARAMETER static void
+improve_calc_sift_descriptor(const Mat &gauss_image, float main_angle,
+                             Point2f pt, float scale, int d, int n,
+                             float *descriptor) {
   int n1 = 16, n2 = 6, n3 = 4;
 
   Point ptxy(cvRound(pt.x), cvRound(pt.y)); //坐标取整
@@ -1749,10 +1751,8 @@ static void improve_calc_sift_descriptor(const Mat &gauss_image,
   // X保存水平差分，Y保存竖直差分，Mag保存梯度幅度，Angle保存特征点方向,
   // W保存高斯权重
   float *X = buf, *Y = buf + len, *Mag = Y, *Angle = Y + len, *W = Angle + len;
-  float *X2 = buf, *Y2 = buf + len, *Mag2 = Y, *Angle2 = Y + len,
-        *W2 = Angle + len;
-  float *X3 = buf, *Y3 = buf + len, *Mag3 = Y, *Angle3 = Y + len,
-        *W3 = Angle + len;
+  float *X2 = buf, *Y2 = buf + len, *W2 = Angle + len;
+  float *X3 = buf, *Y3 = buf + len, *W3 = Angle + len;
 
   float *RBin = W + len, *CBin = RBin + len, *hist = CBin + len;
   float *RBin2 = W + len, *CBin2 = RBin + len;
@@ -2112,10 +2112,10 @@ static void improve_calc_sift_descriptor(const Mat &gauss_image,
 /*gauss_pyr表示高斯金字塔
   keypoints表示特征点、
   descriptors表示生成的特征点的描述子*/
-void mySift::calc_sift_descriptors(const vector<vector<Mat>> &gauss_pyr,
-                                   vector<KeyPoint> &keypoints,
-                                   Mat &descriptors, const vector<Mat> &amplit,
-                                   const vector<Mat> &orient) {
+void mySift::calc_sift_descriptors(
+    const vector<vector<Mat>> &gauss_pyr, vector<KeyPoint> &keypoints,
+    Mat &descriptors, POSSIBLE_UNSED_PARAMETER const vector<Mat> &amplit,
+    POSSIBLE_UNSED_PARAMETER const vector<Mat> &orient) {
   int d = DESCR_WIDTH; // d=4,特征点邻域网格个数是d x d
   int n = DESCR_HIST_BINS; // n=8,每个网格特征点梯度角度等分为8个方向
 
@@ -2315,16 +2315,18 @@ void mySift::calc_gloh_descriptors(const vector<Mat> &amplit,
   all_cell_contrasts用于存放所有尺度层中所有单元格的对比度
   vector<vector<float>>&
   average_contrast用于存放所有尺度层中多有单元格的平均对比度*/
-void mySift::detect(const Mat &image, vector<vector<Mat>> &gauss_pyr,
-                    vector<vector<Mat>> &dog_pyr, vector<KeyPoint> &keypoints,
-                    vector<vector<vector<float>>> &all_cell_contrasts,
-                    vector<vector<float>> &average_contrast,
-                    vector<vector<int>> &n_cells, vector<int> &num_cell,
-                    vector<vector<int>> &available_n,
-                    vector<int> &available_num,
-                    vector<KeyPoint> &final_keypoints,
-                    vector<KeyPoint> &Final_keypoints,
-                    vector<KeyPoint> &Final_Keypoints) {
+void mySift::detect(
+    const Mat &image, vector<vector<Mat>> &gauss_pyr,
+    vector<vector<Mat>> &dog_pyr, vector<KeyPoint> &keypoints,
+    POSSIBLE_UNSED_PARAMETER vector<vector<vector<float>>> &all_cell_contrasts,
+    POSSIBLE_UNSED_PARAMETER vector<vector<float>> &average_contrast,
+    POSSIBLE_UNSED_PARAMETER vector<vector<int>> &n_cells,
+    POSSIBLE_UNSED_PARAMETER vector<int> &num_cell,
+    POSSIBLE_UNSED_PARAMETER vector<vector<int>> &available_n,
+    POSSIBLE_UNSED_PARAMETER vector<int> &available_num,
+    POSSIBLE_UNSED_PARAMETER vector<KeyPoint> &final_keypoints,
+    POSSIBLE_UNSED_PARAMETER vector<KeyPoint> &Final_keypoints,
+    POSSIBLE_UNSED_PARAMETER vector<KeyPoint> &Final_Keypoints) {
   if (image.empty() || image.depth() != CV_8U)
     CV_Error(CV_StsBadArg, "输入图像为空，或者图像深度不是CV_8U");
 
@@ -2336,7 +2338,7 @@ void mySift::detect(const Mat &image, vector<vector<Mat>> &gauss_pyr,
   Mat init_gauss;
   create_initial_image(image, init_gauss);
   // ---------------------------------------------------
-  int _o = 0;
+  POSSIBLE_UNSED_PARAMETER int _o = 0;
   // ---------------------------------------------------
   //生成高斯尺度空间图像
   build_gaussian_pyramid(init_gauss, gauss_pyr, nOctaves);

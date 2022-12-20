@@ -24,7 +24,7 @@ add_executable(img_histogram_equalization img_histogram_equalization.cc)
 add_executable(img_morphology img_morphology.cc)
 add_executable(img_opt img_opt.cc)
 add_executable(img_sift img_sift.cc)
-add_executable(kdtree_test kdtree_test.cc)
+# add_executable(kdtree_test kdtree_test.cc)
 add_executable(opencv_sift opencv_sift.cc)
 add_executable(img_detection_keypoint img_detection_keypoint.cc)
 
