@@ -3,3 +3,4 @@ SIFT-opencv-v4.4.0
 .xmake
 build
 *.log
+compile_commands.json

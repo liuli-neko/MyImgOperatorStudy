@@ -19,7 +19,7 @@ int main() {
   // 遍历单位圆上的所有复数点
   for (int i = 0; i < 100; i++) {
     // 计算复数的角度
-    double b = -2 * M_PI * i / 100;
+    double b = -2 * PI * i / 100;
     c = complex<double>(0, b);
     // 输出结果
     cout << "b = " << b << endl;

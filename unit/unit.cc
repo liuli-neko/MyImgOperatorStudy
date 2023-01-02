@@ -1,9 +1,6 @@
 #include "unit.h"
 
 namespace MY_IMG {
-
-const double PI = acos(-1);
-
 void Rgb2Gray(const IMG_Mat &img, IMG_Mat &dimg, const std::vector<double> &w) {
   int width = img.cols;
   int height = img.rows;
@@ -227,7 +224,7 @@ void GaussBlur(const IMG_Mat &src, IMG_Mat &dst, const double &sigma,
       ASSERT(false, "GaussBlur: unsupported type");
     }
   } else {
-    IMG_Mat tmp_buffer[src.channels()];
+    IMG_Mat*  tmp_buffer = new IMG_Mat[src.channels()];
     cv::split(src, tmp_buffer);
     for (int i = 0; i < src.channels(); i++) {
       if (src.type() == CV_32FC3) {
@@ -246,6 +243,7 @@ void GaussBlur(const IMG_Mat &src, IMG_Mat &dst, const double &sigma,
     for (int i = 0; i < src.channels(); i++) {
       tmp_buffer[i].release();
     }
+    delete[] tmp_buffer;
   }
 }
 void ImgFilter(const IMG_Mat &img, const IMG_Mat &filter, IMG_Mat &dimg,
@@ -266,7 +264,7 @@ void ImgFilter(const IMG_Mat &img, const IMG_Mat &filter, IMG_Mat &dimg,
   LOG(INFO,"type_size: %d type_code: %d", type_size, type_code);
 
   // 分配内存
-  IMG_Mat temp_img[type_size];
+  IMG_Mat* temp_img = new IMG_Mat[type_size];
   for (int i = 0; i < type_size; i++) {
     temp_img[i] = IMG_Mat(height, width, CV_8UC1);
   }
@@ -288,6 +286,8 @@ void ImgFilter(const IMG_Mat &img, const IMG_Mat &filter, IMG_Mat &dimg,
   for (int i = 0; i < type_size; i++) {
     temp_img[i].release();
   }
+
+  delete[] temp_img;
 }
 IMG_Mat ConvertComplexMat2doubleMat(const IMG_Mat &img) {
   int height = img.rows;
@@ -392,7 +392,7 @@ void _fft_core(std::shared_ptr<std::complex<double>[]> src, int lim,
   }
   int opt = (is_fft ? -1 : 1);
   for (int m = 1; m <= lim; m <<= 1) {
-    std::complex<double> wn(cos(2.0 * M_PI / m), opt * sin(2.0 * M_PI / m));
+    std::complex<double> wn(cos(2.0 * PI / m), opt * sin(2.0 * PI / m));
     for (int i = 0; i < lim; i += m) {
       std::complex<double> w(1, 0);
       for (int j = 0; j < (m >> 1); j++, w = w * wn) {
@@ -495,7 +495,7 @@ void DFT(const IMG_Mat &img, IMG_Mat &dft_img) {
   _fftShift(eigen_img);
   Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> dft_mat;
   _dft_core(eigen_img, dft_mat, [](double x, double u, double N) {
-    return std::exp(std::complex<double>(0, -2 * M_PI * x * u / N));
+    return std::exp(std::complex<double>(0, -2 * PI * x * u / N));
   });
   // 转换为IMG_Mat
   dft_img = ConvertEigen2Mat(dft_mat);
@@ -511,7 +511,7 @@ void IDFT(const IMG_Mat &dft_img, IMG_Mat &idft_img) {
       eigen_img = ConvertMat2Eigen(dft_img);
   Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> idft_mat;
   _dft_core(eigen_img, idft_mat, [](double x, double u, double N) {
-    return std::exp(std::complex<double>(0, 2 * M_PI * x * u / N));
+    return std::exp(std::complex<double>(0, 2 * PI * x * u / N));
   });
   _fftShift(idft_mat);
   // 转换为IMG_Mat

@@ -16,7 +16,6 @@
 #include <opencv2/opencv.hpp>
 
 // openmp
-#include <pthread.h>
 #include <omp.h>
 
 using IMG_Mat = cv::Mat;

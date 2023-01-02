@@ -3,16 +3,19 @@ add_rules("mode.debug","mode.release")
 add_requires("libwebp", "libpng", "libjpeg", "opencv")
 add_requires("eigen")
 
-add_cxxflags("-fexec-charset=GBK")
+if is_plat("windows") then
+  add_cxxflags("/utf-8")
+end
 
 if is_mode("debug") then
   add_defines("DEBUG")
 end
 
+add_packages("eigen")
+
 target("main")
     add_includedirs("unit/")
     add_packages("libwebp", "libpng", "libjpeg", "opencv")
-    add_packages("eigen")
     add_files("unit/*.cc")
     add_files("*.cc")
 
@@ -41,6 +44,7 @@ target("img_histogram_equalization")
     add_packages("libwebp")
     add_files("unit/*.cc")
     add_files("test/img_histogram_equalization.cc")
+
 target("img_dft")
     add_includedirs("unit/")
     add_packages("opencv")
@@ -61,15 +65,6 @@ target("img_filter")
 
 target("math_test")
     add_files("test/math_test.cc")
-
-target("main")
-    add_includedirs("unit/")
-    add_packages("opencv")
-    add_packages("libjpeg")
-    add_packages("libpng")
-    add_packages("libwebp")
-    add_files("unit/*.cc")
-    add_files("*.cc")
 
 target("img_morphology")
     add_includedirs("unit/")

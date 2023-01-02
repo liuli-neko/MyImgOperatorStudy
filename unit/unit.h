@@ -4,8 +4,9 @@
 #define USE_EIGEN
 #include "all.h"
 
-namespace MY_IMG {
+const double PI = acos(-1.0);
 
+namespace MY_IMG {
 #define GRAY_MAX 255
 
 // 拉普拉斯算子

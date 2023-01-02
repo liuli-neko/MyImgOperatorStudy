@@ -529,13 +529,13 @@ void _detect_keypoint(Image &src, const std::vector<Octave> &Octaves,
 
 void image_pyramid_create_self(Image &src, const SiftParam &param,
                                std::vector<Octave> &octaves) {
-  LOG(INFO, "初始化第一张图像");
+  std::cout << "initialization first image" << std::endl;
   IMG_Mat init_img;
   _init_first_img(src, param, init_img);
   std::vector<double> sigmas;
   LOG(INFO, "生成高斯模糊系数");
   _init_sigmas(param, sigmas);
-  LOG(INFO, "生成图像金字塔");
+  LOG(INFO, "generator gauss pyramid");
   _init_octave_gauss_pyramid(src, param, sigmas, init_img, octaves);
   LOG(INFO, "生成差分图像");
   _init_dog_pyramid(src, octaves, param);
@@ -633,8 +633,8 @@ void _calc_sift_descriptor(const IMG_Mat &gauss_image, const SiftParam &param,
   int kpt_x = int(x + 0.5);
   int kpt_y = int(y + 0.5);
 
-  float cos_t = cosf(-main_angle * (float)(M_PI / 180.0));
-  float sin_t = sinf(-main_angle * (float)(M_PI / 180.0));
+  float cos_t = cosf(-main_angle * (float)(PI / 180.0));
+  float sin_t = sinf(-main_angle * (float)(PI / 180.0));
 
   float bins_per_rad = n / 360.0f;
 
@@ -815,7 +815,7 @@ void _calc_sift_descriptor(const IMG_Mat &gauss_image, const SiftParam &param,
 }
 void _calc_sift_descriptors(Image &src, std::vector<Octave> &octaves,
                             const SiftParam &param) {
-  LOG(INFO, "计算SIFT特征点的描述子");
+  LOG(INFO, "calc sift descriptors");
   int d = param.descr_width;
   int n = param.descr_hist_bins;
   std::vector<std::shared_ptr<MY_IMG::KeyPoint>> &kpts = src.keypoints;
@@ -843,7 +843,7 @@ void _calc_sift_descriptors(Image &src, std::vector<Octave> &octaves,
 }
 void FeatureExtraction(Image &src, const SiftParam &param) {
   std::vector<Octave> octaves;
-  // -----------------------初始化图像金字塔--------------------------------
+  // -------------------------------------------------------
   image_pyramid_create_opencv(src, param, octaves);
   // -----------------------获取关键点--------------------------------
   LOG(INFO, "检测关键点");
@@ -891,7 +891,7 @@ void FeatureExtraction(Image &src, const SiftParam &param) {
     octaves.at(i).dog_layers.clear();
   }
   octaves.clear();
-  LOG(INFO, "释放图像金字塔内存完成");
+  LOG(INFO, "memory free sucessful");
 }
 
 void SIFT(Image &src) {

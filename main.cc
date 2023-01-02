@@ -3,7 +3,7 @@
 #include <Eigen/Geometry>
 #include <iostream>
 #include <opencv2/opencv.hpp>
-#include <unit.h>
+#include "unit.h"
 
 std::string img_path = "test.png";
 std::string output = "rota_test.png";
@@ -16,7 +16,7 @@ Eigen::Matrix2d rotate_matrix(const double &angle) {
 
 void rotate_img(const cv::Mat &src, cv::Mat &dst, double angle,
                 const double &zoom) {
-  angle -= static_cast<int>(angle / M_PI) * M_PI;
+  angle -= static_cast<int>(angle / PI) * PI;
   Eigen::Matrix2d R = rotate_matrix(angle) * zoom;
   std::cout << "R:" << std::endl;
   std::cout << R << std::endl;

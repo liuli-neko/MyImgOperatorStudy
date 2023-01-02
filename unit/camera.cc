@@ -43,6 +43,7 @@ Eigen::Vector2d Camera::ProjectPoint2Img(const Eigen::Vector3d &point_3d,
   LOG(INFO,"point : (%.2lf,%.2lf)", point[0], point[1]);
   return point;
 }
+
 Eigen::Matrix4d Camera::PoseWorld2Camera() {
   Eigen::Matrix4d pose = Eigen::Matrix4d::Identity();
 
@@ -51,16 +52,19 @@ Eigen::Matrix4d Camera::PoseWorld2Camera() {
 
   return pose;
 }
+
 void Camera::SetR(const Eigen::Matrix3d &R) { R_ = R; }
 void Camera::SetT(const Eigen::Vector3d &t) { t_ = t; }
 void Camera::SetCenter(const Eigen::Vector2d &center) { center_ = center; }
 void Camera::SetDistortion(const Eigen::VectorXd dist_offset) {
   dist_offset_ = dist_offset;
 }
+
 void Camera::SetFocalDistance(const std::vector<double> &f) { f_ = f; }
 Eigen::Matrix3d Camera::GetR() { return R_; }
 Eigen::Vector3d Camera::GetT() { return t_; }
 Eigen::Vector2d Camera::GetCenter() { return center_; }
 Eigen::VectorXd Camera::Getdistortion() { return dist_offset_; }
 std::vector<double> Camera::GetFocalDistance() { return f_; }
+
 } // namespace MY_IMG
