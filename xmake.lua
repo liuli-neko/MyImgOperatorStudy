@@ -2,6 +2,7 @@ add_rules("mode.debug","mode.release")
 
 add_requires("libwebp", "libpng", "libjpeg", "opencv")
 add_requires("eigen")
+add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 
 if is_plat("windows") then
   add_cxxflags("/utf-8")
